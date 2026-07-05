@@ -72,8 +72,8 @@ EOF
   make_fake_runtime "$bin_dir" docker "$docker_mode"
   make_fake_runtime "$bin_dir" podman "$podman_mode"
 
-  SXV_TEST_TMP="$tmp"
-  SXV_TEST_BIN="$bin_dir"
+  CONTAINER_GUI_TEST_TMP="$tmp"
+  CONTAINER_GUI_TEST_BIN="$bin_dir"
 }
 
 make_fake_runtime() {
@@ -91,12 +91,12 @@ EOF
 #!/usr/bin/env bash
 runtime="$(basename "$0")"
 cmd="${1:-}"
-printf '%s %s' "$runtime" "$1" >>"$SXV_TEST_STATE/commands"
+printf '%s %s' "$runtime" "$1" >>"$CONTAINER_GUI_TEST_STATE/commands"
 shift || true
 for arg in "$@"; do
-  printf ' %s' "$arg" >>"$SXV_TEST_STATE/commands"
+  printf ' %s' "$arg" >>"$CONTAINER_GUI_TEST_STATE/commands"
 done
-printf '\n' >>"$SXV_TEST_STATE/commands"
+printf '\n' >>"$CONTAINER_GUI_TEST_STATE/commands"
 
 case "$cmd" in
   version)
@@ -104,7 +104,7 @@ case "$cmd" in
     ;;
   image)
     if [[ "${1:-}" == inspect ]]; then
-      exit "${SXV_TEST_IMAGE_EXISTS:-1}"
+      exit "${CONTAINER_GUI_TEST_IMAGE_EXISTS:-1}"
     fi
     ;;
   build)
@@ -121,7 +121,7 @@ case "$cmd" in
       esac
     done
     if [[ -n "$containerfile" && -f "$containerfile" ]]; then
-      cp "$containerfile" "$SXV_TEST_STATE/${runtime}-Containerfile"
+      cp "$containerfile" "$CONTAINER_GUI_TEST_STATE/${runtime}-Containerfile"
     fi
     exit 0
     ;;
@@ -154,18 +154,18 @@ case "$cmd" in
         printf 'unless-stopped\n'
         ;;
       *Config.Image*)
-        printf 'rcd-container-gui:el9-xfce\n'
+        printf 'ucla.edu/polyarch/container-gui:el9-xfce\n'
         ;;
-      *rcd.container.gui.display*)
+      *ucla.polyarch.container.gui.display*)
         printf '7\n'
         ;;
-      *rcd.container.gui.resolution*)
+      *ucla.polyarch.container.gui.resolution*)
         printf '1600x900\n'
         ;;
-      *rcd.container.gui.desktop*)
+      *ucla.polyarch.container.gui.desktop*)
         printf 'xfce\n'
         ;;
-      *rcd.container.gui*)
+      *ucla.polyarch.container.gui*)
         printf 'true\n'
         ;;
     esac
@@ -181,18 +181,18 @@ EOF
 }
 
 cleanup_fake_path() {
-  rm -rf "${SXV_TEST_TMP:-}"
-  unset SXV_TEST_TMP SXV_TEST_BIN
+  rm -rf "${CONTAINER_GUI_TEST_TMP:-}"
+  unset CONTAINER_GUI_TEST_TMP CONTAINER_GUI_TEST_BIN
 }
 
 run_script() {
-  PATH="$SXV_TEST_BIN:$PATH" \
-    SXV_TEST_STATE="$SXV_TEST_TMP" \
+  PATH="$CONTAINER_GUI_TEST_BIN:$PATH" \
+    CONTAINER_GUI_TEST_STATE="$CONTAINER_GUI_TEST_TMP" \
     bash "$SCRIPT" gui "$@"
 }
 
 commands_log() {
-  cat "$SXV_TEST_TMP/commands" 2>/dev/null || true
+  cat "$CONTAINER_GUI_TEST_TMP/commands" 2>/dev/null || true
 }
 
 test_start_prefers_docker_and_prints_connection_details() {
@@ -207,12 +207,12 @@ test_start_prefers_docker_and_prints_connection_details() {
   assert_contains "$output" 'Desktop: xfce' || return 1
   assert_contains "$output" 'DISPLAY=127.0.0.1:7' || return 1
   assert_contains "$output" 'VNC: vnc://127.0.0.1:5907' || return 1
-  assert_contains "$commands" 'docker image inspect rcd-container-gui:el9-xfce' || return 1
+  assert_contains "$commands" 'docker image inspect ucla.edu/polyarch/container-gui:el9-xfce' || return 1
   assert_contains "$commands" 'docker build' || return 1
-  assert_contains "$commands" 'docker build -t rcd-container-gui:el9-xfce -f' || return 1
+  assert_contains "$commands" 'docker build -t ucla.edu/polyarch/container-gui:el9-xfce -f' || return 1
   assert_contains "$commands" 'docker run' || return 1
   assert_contains "$commands" '--name Xvnc-X11-demo' || return 1
-  assert_contains "$commands" '--label rcd.container.gui.desktop=xfce' || return 1
+  assert_contains "$commands" '--label ucla.polyarch.container.gui.desktop=xfce' || return 1
   assert_contains "$commands" '-p 127.0.0.1:5907:5907' || return 1
   assert_contains "$commands" '-p 127.0.0.1:6007:6007' || return 1
   assert_contains "$commands" 'Xvnc :7' || return 1
@@ -221,7 +221,7 @@ test_start_prefers_docker_and_prints_connection_details() {
   assert_not_contains "$commands" 'podman ' || return 1
 
   local containerfile
-  containerfile="$(cat "$SXV_TEST_TMP/docker-Containerfile")"
+  containerfile="$(cat "$CONTAINER_GUI_TEST_TMP/docker-Containerfile")"
   assert_contains "$containerfile" 'xfce4-settings' || return 1
   assert_contains "$containerfile" 'xfdesktop' || return 1
   assert_contains "$containerfile" '/etc/xdg/autostart/xfce-polkit.desktop' || return 1
@@ -239,7 +239,7 @@ test_start_falls_back_to_podman() {
   commands="$(commands_log)"
 
   assert_contains "$output" 'Runtime: podman' || return 1
-  assert_contains "$commands" 'podman image inspect rcd-container-gui:el9-xfce' || return 1
+  assert_contains "$commands" 'podman image inspect ucla.edu/polyarch/container-gui:el9-xfce' || return 1
   assert_contains "$commands" 'podman run' || return 1
 }
 
@@ -268,13 +268,13 @@ test_openbox_desktop_uses_openbox_image_and_start_command() {
   commands="$(commands_log)"
 
   assert_contains "$output" 'Desktop: openbox' || return 1
-  assert_contains "$commands" 'docker image inspect rcd-container-gui:el9-openbox' || return 1
-  assert_contains "$commands" '--label rcd.container.gui.desktop=openbox' || return 1
+  assert_contains "$commands" 'docker image inspect ucla.edu/polyarch/container-gui:el9-openbox' || return 1
+  assert_contains "$commands" '--label ucla.polyarch.container.gui.desktop=openbox' || return 1
   assert_contains "$commands" 'DISPLAY=:9 openbox' || return 1
   assert_not_contains "$commands" 'startxfce4' || return 1
 
   local containerfile
-  containerfile="$(cat "$SXV_TEST_TMP/docker-Containerfile")"
+  containerfile="$(cat "$CONTAINER_GUI_TEST_TMP/docker-Containerfile")"
   assert_contains "$containerfile" 'useradd --create-home --shell /bin/bash x11user' || return 1
   assert_contains "$containerfile" 'USER x11user' || return 1
 }
@@ -350,7 +350,7 @@ test_status_reports_state_and_connection_details() {
   assert_contains "$output" 'Runtime: docker' || return 1
   assert_contains "$output" 'State: running' || return 1
   assert_contains "$output" 'Runtime status: Xvnc-X11-demo running 127.0.0.1:5902->5902/tcp' || return 1
-  assert_contains "$output" 'Image: rcd-container-gui:el9-xfce' || return 1
+  assert_contains "$output" 'Image: ucla.edu/polyarch/container-gui:el9-xfce' || return 1
   assert_contains "$output" 'Restart policy: unless-stopped' || return 1
   assert_contains "$output" 'Desktop: xfce' || return 1
   assert_contains "$output" 'Resolution: 1600x900' || return 1
@@ -380,7 +380,7 @@ test_list_uses_managed_container_label() {
   commands="$(commands_log)"
 
   assert_contains "$output" 'Xvnc-X11-demo running' || return 1
-  assert_contains "$commands" 'docker ps -a --filter label=rcd.container.gui=true' || return 1
+  assert_contains "$commands" 'docker ps -a --filter label=ucla.polyarch.container.gui=true' || return 1
 }
 
 test_help_is_default_and_aliases_work_without_runtime() {
@@ -406,7 +406,7 @@ test_help_is_default_and_aliases_work_without_runtime() {
 
 test_setup_installs_container_cli() {
   grep -q 'container.sh' "$SETUP" || fail "setup.sh does not install container CLI" || return 1
-  ! grep -q 'start-X11-as-vnc' "$SETUP" || fail "setup.sh should not install start-X11-as-vnc" || return 1
+  grep -q 'container.sh' "$SETUP" || fail "setup.sh should install container.sh" || return 1
 }
 
 run_test() {

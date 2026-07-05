@@ -35,6 +35,7 @@ RUN dnf -y update && \
         libtiff openssl-devel apr-util libxcrypt-compat libnsl \
         "xcb-util-*" xkeyboard-config libxkbcommon-x11 \
         alsa-lib ncurses-compat-libs \
+        libXScrnSaver motif orc readline7 libtool-ltdl \
         numactl-libs pulseaudio-libs-glib2 \
         openldap-compat \
         # Cadence SPB
@@ -105,7 +106,7 @@ RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master
     echo 'ZSH_THEME="ai-candy"' >> /home/${user}/.zshrc && \
     echo 'plugins=(git)' >> /home/${user}/.zshrc && \
     echo 'source $ZSH/oh-my-zsh.sh' >> /home/${user}/.zshrc && \
-    echo '[ -f /etc/profile.d/modules.sh ] && source /etc/profile.d/modules.sh' >> /home/${user}/.zshrc
+    echo '[ -f /etc/profile.d/lmod.sh ] && source /etc/profile.d/lmod.sh; [ -f /etc/profile.d/modules.sh ] && source /etc/profile.d/modules.sh' >> /home/${user}/.zshrc
 
 # Change Theme to AI-Candy
 RUN curl -o /home/${user}/.oh-my-zsh/custom/themes/ai-candy.zsh-theme \

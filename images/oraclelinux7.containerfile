@@ -17,7 +17,7 @@ RUN yum -y update && \
     yum install -y redhat-lsb-core passwd && \
     yum -y install \
         # Basic development and shell tools
-        ksh csh xterm tcsh tcl-devel file which gcc gcc-c++ make iptables iptables-services environment-modules \
+        ksh csh xterm tcsh tcl-devel file which gcc gcc-c++ make iptables iptables-services Lmod \
         # X11 and GUI libraries required for EDA GUI applications
         libXp libXtst libXext libXft libXmu libXrandr libXrender \
         libXi libXcursor libXinerama libXdmcp libXau libxcb \
@@ -101,7 +101,7 @@ RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master
     echo 'ZSH_THEME="ai-candy"' >> /home/${user}/.zshrc && \
     echo 'plugins=(git)' >> /home/${user}/.zshrc && \
     echo 'source $ZSH/oh-my-zsh.sh' >> /home/${user}/.zshrc && \
-    echo '[ -f /etc/profile.d/modules.sh ] && source /etc/profile.d/modules.sh' >> /home/${user}/.zshrc
+    echo '[ -f /etc/profile.d/lmod.sh ] && source /etc/profile.d/lmod.sh; [ -f /etc/profile.d/modules.sh ] && source /etc/profile.d/modules.sh' >> /home/${user}/.zshrc
 
 # Change Theme to AI-Candy
 RUN curl -o /home/${user}/.oh-my-zsh/custom/themes/ai-candy.zsh-theme \

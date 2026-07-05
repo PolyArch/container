@@ -708,11 +708,12 @@ test_image_list_and_create_cover_engine_matrix() {
   assert_contains "$EDA_TEST_LAST_OUTPUT" "1/1 done" || return 1
 }
 
-test_containerfiles_support_environment_modules() {
+test_containerfiles_support_module_initialization() {
   local os_type containerfile
   while IFS= read -r os_type; do
     containerfile="$REPO_ROOT/images/$os_type.containerfile"
-    assert_file_contains "$containerfile" "environment-modules" || return 1
+    grep -Eq "environment-modules|Lmod" "$containerfile" \
+      || fail "missing module system package in $containerfile" || return 1
     assert_file_contains "$containerfile" "/etc/profile.d/modules.sh" || return 1
   done < <("$REPO_ROOT/container.sh" run --os list)
 }
@@ -886,7 +887,7 @@ run_test test_image_create_builds_hashed_image
 run_test test_image_progress_spinner_uses_braille_frames
 run_test test_image_list_reports_image_status_by_os
 run_test test_image_list_and_create_cover_engine_matrix
-run_test test_containerfiles_support_environment_modules
+run_test test_containerfiles_support_module_initialization
 run_test test_image_requires_os_except_list
 run_test test_image_clean_skips_used_images_without_force
 run_test test_image_clean_force_requires_confirmation_for_used_images

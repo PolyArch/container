@@ -8,8 +8,8 @@ DISPLAY_NUMBER=""
 DESKTOP="xfce"
 POSITIONALS=()
 
-IMAGE_BASE="${CONTAINER_GUI_IMAGE_BASE:-${SXV_IMAGE_BASE:-rcd-container-gui}}"
-MANAGED_LABEL="rcd.container.gui"
+IMAGE_BASE="${CONTAINER_GUI_IMAGE_BASE:-ucla.edu/polyarch/container-gui}"
+MANAGED_LABEL="ucla.polyarch.container.gui"
 DEFAULT_RESOLUTION="1920x1080"
 
 usage() {
@@ -345,8 +345,8 @@ EOF
 
 image_for_desktop() {
   local desktop="$1"
-  if [[ -n "${SXV_IMAGE:-}" ]]; then
-    printf '%s\n' "$SXV_IMAGE"
+  if [[ -n "${CONTAINER_GUI_IMAGE:-}" ]]; then
+    printf '%s\n' "$CONTAINER_GUI_IMAGE"
     return 0
   fi
   printf '%s:el9-%s\n' "$IMAGE_BASE" "$desktop"
@@ -410,16 +410,16 @@ status_container() {
   "$runtime" inspect "$container" >/dev/null 2>&1 \
     || die "container not found: ${container}"
 
-  managed="$(inspect_value "$runtime" "$container" '{{ index .Config.Labels "rcd.container.gui" }}')"
+  managed="$(inspect_value "$runtime" "$container" '{{ index .Config.Labels "ucla.polyarch.container.gui" }}')"
   [[ "$managed" == true ]] \
     || die "container is not managed by container gui: ${container}"
 
   state="$(inspect_value "$runtime" "$container" '{{ .State.Status }}')"
   image="$(inspect_value "$runtime" "$container" '{{ .Config.Image }}')"
   restart="$(inspect_value "$runtime" "$container" '{{ .HostConfig.RestartPolicy.Name }}')"
-  display="$(inspect_value "$runtime" "$container" '{{ index .Config.Labels "rcd.container.gui.display" }}')"
-  resolution="$(inspect_value "$runtime" "$container" '{{ index .Config.Labels "rcd.container.gui.resolution" }}')"
-  desktop="$(inspect_value "$runtime" "$container" '{{ index .Config.Labels "rcd.container.gui.desktop" }}')"
+  display="$(inspect_value "$runtime" "$container" '{{ index .Config.Labels "ucla.polyarch.container.gui.display" }}')"
+  resolution="$(inspect_value "$runtime" "$container" '{{ index .Config.Labels "ucla.polyarch.container.gui.resolution" }}')"
+  desktop="$(inspect_value "$runtime" "$container" '{{ index .Config.Labels "ucla.polyarch.container.gui.desktop" }}')"
   runtime_status="$("$runtime" ps -a --filter "name=^${container}$" \
     --format '{{.Names}} {{.Status}} {{.Ports}}' | head -n 1 || true)"
 

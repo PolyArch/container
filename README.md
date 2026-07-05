@@ -149,7 +149,7 @@ container gui restart eda
 container gui remove eda
 ```
 
-The GUI image is built locally as `rcd-container-gui:el9-<desktop>`, with
+The GUI image is built locally as `ucla.edu/polyarch/container-gui:el9-<desktop>`, with
 `xfce` as the default desktop and `openbox` as a lightweight fallback.
 
 ## Network Access
