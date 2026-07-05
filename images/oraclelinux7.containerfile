@@ -17,7 +17,7 @@ RUN yum -y update && \
     yum install -y redhat-lsb-core passwd && \
     yum -y install \
         # Basic development and shell tools
-        ksh csh xterm tcsh tcl-devel file which gcc gcc-c++ make iptables iptables-services Lmod \
+        ksh csh xterm tcsh tcl-devel file which gcc gcc-c++ make curl tar gzip iptables iptables-services \
         # X11 and GUI libraries required for EDA GUI applications
         libXp libXtst libXext libXft libXmu libXrandr libXrender \
         libXi libXcursor libXinerama libXdmcp libXau libxcb \
@@ -32,7 +32,8 @@ RUN yum -y update && \
         # PDF reader
         evince \
         # Additional dependencies specific to EDA tools
-        nss procps-ng elfutils-libelf-devel \
+        nss procps-ng elfutils-libelf-devel pciutils-libs libzstd orc \
+        numactl-libs pcre2 pcre2-utf16 libssh libidn2 glibc.i686 ncurses-libs.i686 \
         libXScrnSaver dbus dbus-devel \
         libtiff openssl-devel apr-util \
         pulseaudio-libs-glib2 \
@@ -57,6 +58,20 @@ RUN rm -f /etc/machine-id /var/lib/dbus/machine-id \
     && mkdir -p /var/lib/dbus \
     && ln -s /etc/machine-id /var/lib/dbus/machine-id \
     && yum clean all
+
+# EL7 distribution packages are either old Environment Modules 3.x or EPEL Lmod.
+# Build Environment Modules 5.x so modulefile behavior matches EL8+ containers.
+ARG modules_version=5.3.0
+RUN cd /tmp \
+    && curl -fsSL -o modules.tar.gz "https://github.com/cea-hpc/modules/releases/download/v${modules_version}/modules-${modules_version}.tar.gz" \
+    && tar -xzf modules.tar.gz \
+    && cd "modules-${modules_version}" \
+    && ./configure --prefix=/usr/share/Modules --modulefilesdir=/usr/share/modulefiles \
+    && make -j2 \
+    && make install \
+    && ln -sf /usr/share/Modules/init/profile.sh /etc/profile.d/modules.sh \
+    && ln -sf /usr/share/Modules/init/profile.csh /etc/profile.d/modules.csh \
+    && rm -rf "/tmp/modules-${modules_version}" /tmp/modules.tar.gz
 
 # Create a non-root user for running EDA tools
 # The UID and GID are configurable through build arguments

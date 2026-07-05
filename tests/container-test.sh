@@ -714,7 +714,7 @@ test_containerfiles_support_module_initialization() {
   local os_type containerfile
   while IFS= read -r os_type; do
     containerfile="$REPO_ROOT/images/$os_type.containerfile"
-    grep -Eq "environment-modules|Lmod" "$containerfile" \
+    grep -Eiq "environment[- ]modules|Lmod|modules_version" "$containerfile" \
       || fail "missing module system package in $containerfile" || return 1
     assert_file_contains "$containerfile" "/etc/profile.d/modules.sh" || return 1
   done < <("$REPO_ROOT/container.sh" run --os list)
