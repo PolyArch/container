@@ -265,7 +265,8 @@ Usage:
   container image [OPTIONS]
 
 Image options:
-  --os all|OS[,OS...]      Target OS types. Required except for image list.
+  --os all|TYPE[,TYPE...]  Target runtime OS or GUI image types.
+                           Required except for image list.
                            image list defaults to --os all.
 USAGE
     if (( $(available_engine_count) > 1 )); then
@@ -277,10 +278,10 @@ USAGE
   --force                  Remove containers that use target images after confirmation.
 
 Image actions:
-  list                     Show per-OS image status. This is the default action.
-  create                   Build current images for selected OS types.
+  list                     Show per-image status. This is the default action.
+  create                   Build current images for selected types.
   update                   Build missing or stale current images. Current images are skipped.
-  clean                    Remove images for selected OS types.
+  clean                    Remove images for selected types.
 
 Status fields:
   status                   current, stale, or missing for each OS image row.
@@ -301,36 +302,60 @@ Examples:
   container image --os all
   container image create --os all
   container image create --engine docker --os almalinux8
+  container image create --os gui
   container image update --os oraclelinux7,almalinux8
   container image clean --os almalinux9
   container image clean --os all --force
 USAGE
 }
 
-supported_os_types() {
-    local preferred os path found
-    local seen=()
+runtime_os_types() {
+    local preferred os
     preferred=(oraclelinux7 centos7 almalinux8 rockylinux8 almalinux9 rockylinux9 almalinux10 rockylinux10)
 
     for os in "${preferred[@]}"; do
         if [[ -f "$IMAGE_DIR/$os.containerfile" ]]; then
             printf '%s\n' "$os"
-            seen+=("$os")
+        fi
+    done
+}
+
+supported_os_types() {
+    runtime_os_types
+}
+
+supported_image_types() {
+    local preferred image_type path found
+    local seen=()
+    preferred=(oraclelinux7 centos7 almalinux8 rockylinux8 almalinux9 rockylinux9 almalinux10 rockylinux10 gui)
+
+    for image_type in "${preferred[@]}"; do
+        if [[ -f "$IMAGE_DIR/$image_type.containerfile" ]]; then
+            printf '%s\n' "$image_type"
+            seen+=("$image_type")
         fi
     done
 
     for path in "$IMAGE_DIR"/*.containerfile; do
         [[ -e "$path" ]] || continue
-        os="$(basename "$path" .containerfile)"
+        image_type="$(basename "$path" .containerfile)"
         found=false
         for known in "${seen[@]}"; do
-            if [[ "$known" == "$os" ]]; then
+            if [[ "$known" == "$image_type" ]]; then
                 found=true
                 break
             fi
         done
-        [[ "$found" == true ]] || printf '%s\n' "$os"
+        [[ "$found" == true ]] || printf '%s\n' "$image_type"
     done
+}
+
+is_runtime_os_type() {
+    local requested="$1" os_type
+    while IFS= read -r os_type; do
+        [[ "$requested" == "$os_type" ]] && return 0
+    done < <(runtime_os_types)
+    return 1
 }
 
 engine_is_supported() {
@@ -455,7 +480,7 @@ parse_os_list() {
     local spec="$1"
     local os_type
     if [[ "$spec" == all ]]; then
-        supported_os_types
+        supported_image_types
         return 0
     fi
 
@@ -839,6 +864,7 @@ cmd_run() {
     done
 
     [[ -n "$os_type" ]] || die "--os is required for container run"
+    is_runtime_os_type "$os_type" || die "unsupported runtime OS type: $os_type"
     containerfile_for_os "$os_type" >/dev/null
     engine="$(select_run_engine "$requested_engine")"
     image="$(image_for_os "$os_type")"

@@ -12,6 +12,14 @@ fail() {
   return 1
 }
 
+containerfile_hash() {
+  sha256sum "$REPO_ROOT/images/$1.containerfile" | awk '{print substr($1, 1, 12)}'
+}
+
+gui_image_name() {
+  printf 'ucla.edu/polyarch/container-gui-%s:latest' "$(containerfile_hash gui)"
+}
+
 assert_contains() {
   local haystack="$1" needle="$2"
   [[ "$haystack" == *"$needle"* ]] || fail "missing expected text: $needle"
@@ -154,7 +162,7 @@ case "$cmd" in
         printf 'unless-stopped\n'
         ;;
       *Config.Image*)
-        printf 'ucla.edu/polyarch/container-gui:el9-xfce\n'
+        printf '%s\n' "$CONTAINER_GUI_TEST_IMAGE"
         ;;
       *ucla.polyarch.container.gui.display*)
         printf '7\n'
@@ -188,6 +196,7 @@ cleanup_fake_path() {
 run_script() {
   PATH="$CONTAINER_GUI_TEST_BIN:$PATH" \
     CONTAINER_GUI_TEST_STATE="$CONTAINER_GUI_TEST_TMP" \
+    CONTAINER_GUI_TEST_IMAGE="$(gui_image_name)" \
     bash "$SCRIPT" gui "$@"
 }
 
@@ -207,9 +216,9 @@ test_start_prefers_docker_and_prints_connection_details() {
   assert_contains "$output" 'Desktop: xfce' || return 1
   assert_contains "$output" 'DISPLAY=127.0.0.1:7' || return 1
   assert_contains "$output" 'VNC: vnc://127.0.0.1:5907' || return 1
-  assert_contains "$commands" 'docker image inspect ucla.edu/polyarch/container-gui:el9-xfce' || return 1
+  assert_contains "$commands" "docker image inspect $(gui_image_name)" || return 1
   assert_contains "$commands" 'docker build' || return 1
-  assert_contains "$commands" 'docker build -t ucla.edu/polyarch/container-gui:el9-xfce -f' || return 1
+  assert_contains "$commands" "docker build -t $(gui_image_name) -f" || return 1
   assert_contains "$commands" 'docker run' || return 1
   assert_contains "$commands" '--name container-gui-demo' || return 1
   assert_contains "$commands" '--label ucla.polyarch.container.gui.desktop=xfce' || return 1
@@ -239,7 +248,7 @@ test_start_falls_back_to_podman() {
   commands="$(commands_log)"
 
   assert_contains "$output" 'Runtime: podman' || return 1
-  assert_contains "$commands" 'podman image inspect ucla.edu/polyarch/container-gui:el9-xfce' || return 1
+  assert_contains "$commands" "podman image inspect $(gui_image_name)" || return 1
   assert_contains "$commands" 'podman run' || return 1
 }
 
@@ -268,7 +277,7 @@ test_openbox_desktop_uses_openbox_image_and_start_command() {
   commands="$(commands_log)"
 
   assert_contains "$output" 'Desktop: openbox' || return 1
-  assert_contains "$commands" 'docker image inspect ucla.edu/polyarch/container-gui:el9-openbox' || return 1
+  assert_contains "$commands" "docker image inspect $(gui_image_name)" || return 1
   assert_contains "$commands" '--label ucla.polyarch.container.gui.desktop=openbox' || return 1
   assert_contains "$commands" 'DISPLAY=:9 openbox' || return 1
   assert_not_contains "$commands" 'startxfce4' || return 1
@@ -362,7 +371,7 @@ test_status_reports_state_and_connection_details() {
   assert_contains "$output" 'Runtime: docker' || return 1
   assert_contains "$output" 'State: running' || return 1
   assert_contains "$output" 'Runtime status: container-gui-demo running 127.0.0.1:5902->5902/tcp' || return 1
-  assert_contains "$output" 'Image: ucla.edu/polyarch/container-gui:el9-xfce' || return 1
+  assert_contains "$output" "Image: $(gui_image_name)" || return 1
   assert_contains "$output" 'Restart policy: unless-stopped' || return 1
   assert_contains "$output" 'Desktop: xfce' || return 1
   assert_contains "$output" 'Resolution: 1600x900' || return 1

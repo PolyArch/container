@@ -663,10 +663,12 @@ test_image_list_reports_image_status_by_os() {
   run_container_cli image list --os all
   assert_status "$EDA_TEST_LAST_STATUS" 0 || return 1
   assert_contains "$EDA_TEST_LAST_OUTPUT" "almalinux10" || return 1
+  assert_contains "$EDA_TEST_LAST_OUTPUT" "gui" || return 1
 
   run_container_cli image --os all
   assert_status "$EDA_TEST_LAST_STATUS" 0 || return 1
   assert_contains "$EDA_TEST_LAST_OUTPUT" "almalinux10" || return 1
+  assert_contains "$EDA_TEST_LAST_OUTPUT" "gui" || return 1
 }
 
 test_image_list_and_create_cover_engine_matrix() {

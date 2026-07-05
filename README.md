@@ -84,17 +84,20 @@ Image options:
 
 | Option | Description |
 | --- | --- |
-| `--os all` | Select every supported OS. Required for every action except `list`. |
-| `--os <os>[,<os>...]` | Select one or more OS types. |
+| `--os all` | Select every supported runtime OS image plus the GUI image. Required for every action except `list`. |
+| `--os <type>[,<type>...]` | Select one or more image types, such as `almalinux9` or `gui`. |
 | `--engine all` | Select every installed container engine. This is the default. |
 | `--engine <engine>[,<engine>...]` | Select one or more installed container engines. |
 | `--force` | Remove containers that use target images, after a `[y/N]` confirmation. |
 
-`images/*.containerfile` files are the source of truth. Image names
-include the containerfile hash:
+`images/*.containerfile` files are the source of truth. The eight runtime OS
+images support tool execution, and `images/gui.containerfile` defines the
+dedicated Xvnc desktop image used by `container gui`. Image names include the
+containerfile hash:
 
 ```text
 ucla.edu/polyarch/container-<OS>-<containerfile-hash>:latest
+ucla.edu/polyarch/container-gui-<containerfile-hash>:latest
 ```
 
 When Docker is selected, `container image create` and `container image update`
@@ -149,8 +152,10 @@ container gui restart eda
 container gui remove eda
 ```
 
-The GUI image is built locally as `ucla.edu/polyarch/container-gui:el9-<desktop>`, with
-`xfce` as the default desktop and `openbox` as a lightweight fallback.
+The GUI image is built locally from `images/gui.containerfile` as
+`ucla.edu/polyarch/container-gui-<containerfile-hash>:latest`. `xfce` is the
+default desktop and `openbox` is a lightweight fallback inside the same GUI
+image.
 Managed GUI container names always use the `container-gui-*` prefix. A command
 such as `container gui start eda` creates `container-gui-eda`; omitting the name
 creates `container-gui-YYYYMMDD-hhmmss`.

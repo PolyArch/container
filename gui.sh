@@ -8,9 +8,12 @@ DISPLAY_NUMBER=""
 DESKTOP="xfce"
 POSITIONALS=()
 
-IMAGE_BASE="${CONTAINER_GUI_IMAGE_BASE:-ucla.edu/polyarch/container-gui}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+GUI_CONTAINERFILE="$SCRIPT_DIR/images/gui.containerfile"
+IMAGE_PREFIX="${CONTAINER_GUI_IMAGE_PREFIX:-ucla.edu/polyarch/container}"
 MANAGED_LABEL="ucla.polyarch.container.gui"
 DEFAULT_RESOLUTION="1920x1080"
+HASH_LENGTH=12
 
 usage() {
   cat <<'EOF'
@@ -293,80 +296,39 @@ choose_display_number() {
   die "no free display number found in range 2..99"
 }
 
-write_containerfile() {
-  local path="$1" desktop="$2"
-  if [[ "$desktop" == openbox ]]; then
-    cat >"$path" <<'EOF'
-FROM almalinux:9
-
-USER root
-RUN dnf -y install epel-release && \
-    dnf -y install \
-        openbox \
-        procps-ng \
-        tigervnc-server \
-        xorg-x11-utils \
-        xorg-x11-xauth \
-        xterm && \
-    dnf clean all
-RUN useradd --create-home --shell /bin/bash x11user
-USER x11user
-WORKDIR /home/x11user
-ENV HOME=/home/x11user USER=x11user LOGNAME=x11user
-EOF
-    return 0
-  fi
-
-  cat >"$path" <<'EOF'
-FROM almalinux:9
-
-USER root
-RUN dnf -y install epel-release && \
-    dnf -y install \
-        Thunar \
-        dbus-x11 \
-        procps-ng \
-        tigervnc-server \
-        xfce4-panel \
-        xfce4-session \
-        xfce4-settings \
-        xfce4-terminal \
-        xfdesktop \
-        xfwm4 \
-        xorg-x11-utils \
-        xorg-x11-xauth \
-        xterm && \
-    rm -f \
-        /etc/xdg/autostart/xfce-polkit.desktop \
-        /etc/xdg/autostart/geoclue-demo-agent.desktop && \
-    dnf clean all
-RUN useradd --create-home --shell /bin/bash x11user
-USER x11user
-WORKDIR /home/x11user
-ENV HOME=/home/x11user USER=x11user LOGNAME=x11user
-EOF
+containerfile_hash() {
+  local path="$1"
+  sha256sum "$path" | awk -v n="$HASH_LENGTH" '{print substr($1, 1, n)}'
 }
 
 image_for_desktop() {
-  local desktop="$1"
   if [[ -n "${CONTAINER_GUI_IMAGE:-}" ]]; then
     printf '%s\n' "$CONTAINER_GUI_IMAGE"
     return 0
   fi
-  printf '%s:el9-%s\n' "$IMAGE_BASE" "$desktop"
+  [[ -f "$GUI_CONTAINERFILE" ]] || die "missing GUI containerfile: $GUI_CONTAINERFILE"
+  printf '%s-gui-%s:latest\n' "$IMAGE_PREFIX" "$(containerfile_hash "$GUI_CONTAINERFILE")"
 }
 
 ensure_image() {
-  local runtime="$1" image="$2" desktop="$3" tmp containerfile
+  local runtime="$1" image="$2" build_file build_file_dir rc
   if "$runtime" image inspect "$image" >/dev/null 2>&1; then
     return 0
   fi
 
-  tmp="$(mktemp -d)"
-  containerfile="$tmp/Containerfile"
-  write_containerfile "$containerfile" "$desktop"
-  "$runtime" build -t "$image" -f "$containerfile" "$tmp"
-  rm -rf "$tmp"
+  build_file_dir="$(mktemp -d)"
+  if [[ "$runtime" == docker ]]; then
+    build_file="$build_file_dir/Dockerfile"
+    cp "$GUI_CONTAINERFILE" "$build_file"
+  else
+    build_file="$GUI_CONTAINERFILE"
+  fi
+  set +e
+  "$runtime" build -t "$image" -f "$build_file" "$SCRIPT_DIR"
+  rc=$?
+  set -e
+  rm -rf "$build_file_dir"
+  return "$rc"
 }
 
 print_connection_info() {
@@ -450,7 +412,7 @@ start_container() {
   x11_port=$((6000 + display))
   vnc_port=$((5900 + display))
 
-  ensure_image "$runtime" "$image" "$desktop"
+  ensure_image "$runtime" "$image"
 
   if [[ "$desktop" == openbox ]]; then
     command="set -eu; Xvnc :${display} -geometry ${resolution} -depth 24 -rfbport ${vnc_port} -SecurityTypes None -localhost no -AlwaysShared -listen tcp -ac 2>&1 & xvnc_pid=\$!; sleep 2; DISPLAY=:${display} openbox >/tmp/openbox.log 2>&1 & DISPLAY=:${display} xterm -geometry 100x30+40+40 >/tmp/xterm.log 2>&1 & wait \"\$xvnc_pid\""
