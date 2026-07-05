@@ -167,7 +167,11 @@ validate_raw_name() {
 container_name_from_raw() {
   local name="$1"
   validate_raw_name "$name"
-  printf 'Xvnc-X11-%s\n' "$name"
+  if [[ "$name" == container-gui-* ]]; then
+    printf '%s\n' "$name"
+    return 0
+  fi
+  printf 'container-gui-%s\n' "$name"
 }
 
 validate_resolution() {

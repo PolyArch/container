@@ -130,7 +130,7 @@ case "$cmd" in
     exit 0
     ;;
   ps)
-    printf 'Xvnc-X11-demo running 127.0.0.1:5902->5902/tcp\n'
+    printf 'container-gui-demo running 127.0.0.1:5902->5902/tcp\n'
     exit 0
     ;;
   inspect)
@@ -203,7 +203,7 @@ test_start_prefers_docker_and_prints_connection_details() {
   output="$(run_script start demo --resolution 1600x900 --port 7)"
   commands="$(commands_log)"
 
-  assert_contains "$output" 'Container: Xvnc-X11-demo' || return 1
+  assert_contains "$output" 'Container: container-gui-demo' || return 1
   assert_contains "$output" 'Desktop: xfce' || return 1
   assert_contains "$output" 'DISPLAY=127.0.0.1:7' || return 1
   assert_contains "$output" 'VNC: vnc://127.0.0.1:5907' || return 1
@@ -211,7 +211,7 @@ test_start_prefers_docker_and_prints_connection_details() {
   assert_contains "$commands" 'docker build' || return 1
   assert_contains "$commands" 'docker build -t ucla.edu/polyarch/container-gui:el9-xfce -f' || return 1
   assert_contains "$commands" 'docker run' || return 1
-  assert_contains "$commands" '--name Xvnc-X11-demo' || return 1
+  assert_contains "$commands" '--name container-gui-demo' || return 1
   assert_contains "$commands" '--label ucla.polyarch.container.gui.desktop=xfce' || return 1
   assert_contains "$commands" '-p 127.0.0.1:5907:5907' || return 1
   assert_contains "$commands" '-p 127.0.0.1:6007:6007' || return 1
@@ -251,11 +251,11 @@ test_start_defaults_name_resolution_display_number_and_xfce() {
   output="$(run_script start)"
   commands="$(commands_log)"
 
-  assert_contains "$output" 'Container: Xvnc-X11-20260701-123456' || return 1
+  assert_contains "$output" 'Container: container-gui-20260701-123456' || return 1
   assert_contains "$output" 'Desktop: xfce' || return 1
   assert_contains "$output" 'Resolution: 3840x2160' || return 1
   assert_contains "$output" 'DISPLAY=127.0.0.1:2' || return 1
-  assert_contains "$commands" '--name Xvnc-X11-20260701-123456' || return 1
+  assert_contains "$commands" '--name container-gui-20260701-123456' || return 1
   assert_contains "$commands" '-geometry 3840x2160' || return 1
 }
 
@@ -332,10 +332,22 @@ test_lifecycle_actions_use_prefixed_container_name() {
 
   local commands
   commands="$(commands_log)"
-  assert_contains "$commands" 'docker stop Xvnc-X11-demo' || return 1
-  assert_contains "$commands" 'docker rm -f Xvnc-X11-demo' || return 1
-  assert_contains "$commands" 'docker restart Xvnc-X11-demo' || return 1
-  assert_contains "$commands" 'docker update --restart=unless-stopped Xvnc-X11-demo' || return 1
+  assert_contains "$commands" 'docker stop container-gui-demo' || return 1
+  assert_contains "$commands" 'docker rm -f container-gui-demo' || return 1
+  assert_contains "$commands" 'docker restart container-gui-demo' || return 1
+  assert_contains "$commands" 'docker update --restart=unless-stopped container-gui-demo' || return 1
+}
+
+test_prefixed_name_is_not_prefixed_twice() {
+  with_fake_path present absent
+  trap cleanup_fake_path RETURN
+
+  run_script stop container-gui-demo >/dev/null
+
+  local commands
+  commands="$(commands_log)"
+  assert_contains "$commands" 'docker stop container-gui-demo' || return 1
+  assert_not_contains "$commands" 'container-gui-container-gui-demo' || return 1
 }
 
 test_status_reports_state_and_connection_details() {
@@ -346,10 +358,10 @@ test_status_reports_state_and_connection_details() {
   output="$(run_script status demo)"
   commands="$(commands_log)"
 
-  assert_contains "$output" 'Container: Xvnc-X11-demo' || return 1
+  assert_contains "$output" 'Container: container-gui-demo' || return 1
   assert_contains "$output" 'Runtime: docker' || return 1
   assert_contains "$output" 'State: running' || return 1
-  assert_contains "$output" 'Runtime status: Xvnc-X11-demo running 127.0.0.1:5902->5902/tcp' || return 1
+  assert_contains "$output" 'Runtime status: container-gui-demo running 127.0.0.1:5902->5902/tcp' || return 1
   assert_contains "$output" 'Image: ucla.edu/polyarch/container-gui:el9-xfce' || return 1
   assert_contains "$output" 'Restart policy: unless-stopped' || return 1
   assert_contains "$output" 'Desktop: xfce' || return 1
@@ -357,7 +369,7 @@ test_status_reports_state_and_connection_details() {
   assert_contains "$output" 'DISPLAY=127.0.0.1:7' || return 1
   assert_contains "$output" 'VNC: vnc://127.0.0.1:5907' || return 1
   assert_contains "$output" 'DISPLAY=127.0.0.1:7 <tool-command>' || return 1
-  assert_contains "$commands" 'docker inspect Xvnc-X11-demo' || return 1
+  assert_contains "$commands" 'docker inspect container-gui-demo' || return 1
 }
 
 test_check_is_status_alias() {
@@ -367,7 +379,7 @@ test_check_is_status_alias() {
   local output
   output="$(run_script check demo)"
 
-  assert_contains "$output" 'Container: Xvnc-X11-demo' || return 1
+  assert_contains "$output" 'Container: container-gui-demo' || return 1
   assert_contains "$output" 'DISPLAY=127.0.0.1:7' || return 1
 }
 
@@ -379,7 +391,7 @@ test_list_uses_managed_container_label() {
   output="$(run_script list)"
   commands="$(commands_log)"
 
-  assert_contains "$output" 'Xvnc-X11-demo running' || return 1
+  assert_contains "$output" 'container-gui-demo running' || return 1
   assert_contains "$commands" 'docker ps -a --filter label=ucla.polyarch.container.gui=true' || return 1
 }
 
@@ -426,6 +438,7 @@ run_test test_invalid_desktop_fails
 run_test test_resolution_larger_than_physical_fails
 run_test test_non_start_actions_require_container_name
 run_test test_lifecycle_actions_use_prefixed_container_name
+run_test test_prefixed_name_is_not_prefixed_twice
 run_test test_status_reports_state_and_connection_details
 run_test test_check_is_status_alias
 run_test test_list_uses_managed_container_label

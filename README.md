@@ -151,6 +151,9 @@ container gui remove eda
 
 The GUI image is built locally as `ucla.edu/polyarch/container-gui:el9-<desktop>`, with
 `xfce` as the default desktop and `openbox` as a lightweight fallback.
+Managed GUI container names always use the `container-gui-*` prefix. A command
+such as `container gui start eda` creates `container-gui-eda`; omitting the name
+creates `container-gui-YYYYMMDD-hhmmss`.
 
 ## Network Access
 
