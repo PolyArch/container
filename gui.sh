@@ -6,6 +6,7 @@ RAW_NAME=""
 RESOLUTION=""
 DISPLAY_NUMBER=""
 DESKTOP="xfce"
+REQUESTED_ENGINE=""
 POSITIONALS=()
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -23,6 +24,7 @@ Usage:
   container gui help
   container gui start [CONTAINER_NAME] [--resolution WIDTHxHEIGHT]
                                       [--port N] [--desktop xfce|openbox]
+                                      [--engine docker|podman]
   container gui stop|remove|restart|enable|status|check CONTAINER_NAME
   container gui list
 
@@ -48,6 +50,8 @@ Options:
   --desktop xfce|openbox Desktop environment for the VNC session.
                          Default: xfce. Openbox is kept as a lightweight
                          fallback.
+  --engine docker|podman Container engine to use. Default: podman when
+                         available, otherwise docker.
   -h, --help             show this help.
 
 Examples:
@@ -92,6 +96,11 @@ while [[ $# -gt 0 ]]; do
     --desktop)
       [[ $# -ge 2 ]] || die "--desktop needs a value"
       DESKTOP="$2"
+      shift 2
+      ;;
+    --engine)
+      [[ $# -ge 2 ]] || die "--engine needs docker or podman"
+      REQUESTED_ENGINE="$2"
       shift 2
       ;;
     --)
@@ -149,15 +158,39 @@ case "$DESKTOP" in
   *) die "--desktop must be one of xfce, openbox" ;;
 esac
 
+engine_is_supported() {
+  case "$1" in
+    podman|docker)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+engine_is_available() {
+  local engine="$1"
+  command -v "$engine" >/dev/null 2>&1 || return 1
+  "$engine" --version >/dev/null 2>&1 || return 1
+}
+
 select_runtime() {
-  local candidate
-  for candidate in docker podman; do
-    if command -v "$candidate" >/dev/null 2>&1 && "$candidate" version >/dev/null 2>&1; then
+  local requested="$1" candidate
+  if [[ -n "$requested" ]]; then
+    engine_is_supported "$requested" || die "unsupported container engine: $requested"
+    engine_is_available "$requested" || die "container engine is not available: $requested"
+    printf '%s\n' "$requested"
+    return 0
+  fi
+
+  for candidate in podman docker; do
+    if engine_is_available "$candidate"; then
       printf '%s\n' "$candidate"
       return 0
     fi
   done
-  die "docker or podman is required"
+  die "install docker or podman before running GUI containers"
 }
 
 validate_raw_name() {
@@ -434,7 +467,7 @@ start_container() {
   print_connection_info "$runtime" "$container" "$resolution" "$display" "$desktop"
 }
 
-runtime="$(select_runtime)"
+runtime="$(select_runtime "$REQUESTED_ENGINE")"
 
 if [[ "$ACTION" == list ]]; then
   "$runtime" ps -a --filter "label=${MANAGED_LABEL}=true" \

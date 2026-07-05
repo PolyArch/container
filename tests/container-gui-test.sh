@@ -204,7 +204,7 @@ commands_log() {
   cat "$CONTAINER_GUI_TEST_TMP/commands" 2>/dev/null || true
 }
 
-test_start_prefers_docker_and_prints_connection_details() {
+test_start_prefers_podman_and_prints_connection_details() {
   with_fake_path present present
   trap cleanup_fake_path RETURN
 
@@ -216,10 +216,11 @@ test_start_prefers_docker_and_prints_connection_details() {
   assert_contains "$output" 'Desktop: xfce' || return 1
   assert_contains "$output" 'DISPLAY=127.0.0.1:7' || return 1
   assert_contains "$output" 'VNC: vnc://127.0.0.1:5907' || return 1
-  assert_contains "$commands" "docker image inspect $(gui_image_name)" || return 1
-  assert_contains "$commands" 'docker build' || return 1
-  assert_contains "$commands" "docker build -t $(gui_image_name) -f" || return 1
-  assert_contains "$commands" 'docker run' || return 1
+  assert_contains "$output" 'Runtime: podman' || return 1
+  assert_contains "$commands" "podman image inspect $(gui_image_name)" || return 1
+  assert_contains "$commands" 'podman build' || return 1
+  assert_contains "$commands" "podman build -t $(gui_image_name) -f" || return 1
+  assert_contains "$commands" 'podman run' || return 1
   assert_contains "$commands" '--name container-gui-demo' || return 1
   assert_contains "$commands" '--label ucla.polyarch.container.gui.desktop=xfce' || return 1
   assert_contains "$commands" '-p 127.0.0.1:5907:5907' || return 1
@@ -227,10 +228,10 @@ test_start_prefers_docker_and_prints_connection_details() {
   assert_contains "$commands" 'Xvnc :7' || return 1
   assert_contains "$commands" 'dbus-run-session startxfce4' || return 1
   assert_not_contains "$commands" 'xfce4-terminal --geometry' || return 1
-  assert_not_contains "$commands" 'podman ' || return 1
+  assert_not_contains "$commands" 'docker ' || return 1
 
   local containerfile
-  containerfile="$(cat "$CONTAINER_GUI_TEST_TMP/docker-Containerfile")"
+  containerfile="$(cat "$CONTAINER_GUI_TEST_TMP/podman-Containerfile")"
   assert_contains "$containerfile" 'xfce4-settings' || return 1
   assert_contains "$containerfile" 'xfdesktop' || return 1
   assert_contains "$containerfile" '/etc/xdg/autostart/xfce-polkit.desktop' || return 1
@@ -239,17 +240,87 @@ test_start_prefers_docker_and_prints_connection_details() {
   assert_contains "$containerfile" 'USER x11user' || return 1
 }
 
-test_start_falls_back_to_podman() {
-  with_fake_path absent present
+test_start_falls_back_to_docker() {
+  with_fake_path present absent
   trap cleanup_fake_path RETURN
 
   local output commands
   output="$(run_script start demo --resolution 1600x900 --port 8)"
   commands="$(commands_log)"
 
+  assert_contains "$output" 'Runtime: docker' || return 1
+  assert_contains "$commands" "docker image inspect $(gui_image_name)" || return 1
+  assert_contains "$commands" 'docker run' || return 1
+}
+
+test_start_uses_requested_docker_engine() {
+  with_fake_path present present
+  trap cleanup_fake_path RETURN
+
+  local output commands
+  output="$(run_script start demo --engine docker --resolution 1600x900 --port 8)"
+  commands="$(commands_log)"
+
+  assert_contains "$output" 'Runtime: docker' || return 1
+  assert_contains "$commands" "docker image inspect $(gui_image_name)" || return 1
+  assert_contains "$commands" 'docker run' || return 1
+  assert_not_contains "$commands" 'podman ' || return 1
+}
+
+test_start_uses_requested_podman_engine() {
+  with_fake_path present present
+  trap cleanup_fake_path RETURN
+
+  local output commands
+  output="$(run_script start demo --engine podman --resolution 1600x900 --port 8)"
+  commands="$(commands_log)"
+
   assert_contains "$output" 'Runtime: podman' || return 1
   assert_contains "$commands" "podman image inspect $(gui_image_name)" || return 1
   assert_contains "$commands" 'podman run' || return 1
+  assert_not_contains "$commands" 'docker ' || return 1
+}
+
+test_start_rejects_unavailable_requested_engine() {
+  with_fake_path absent present
+  trap cleanup_fake_path RETURN
+
+  local output status
+  set +e
+  output="$(run_script start demo --engine docker --resolution 1600x900 --port 8 2>&1)"
+  status=$?
+  set -e
+
+  [[ "$status" -ne 0 ]] || { fail "expected unavailable engine to fail"; return 1; }
+  assert_contains "$output" 'container engine is not available: docker' || return 1
+}
+
+test_start_rejects_unsupported_engine() {
+  with_fake_path present present
+  trap cleanup_fake_path RETURN
+
+  local output status
+  set +e
+  output="$(run_script start demo --engine nerdctl --resolution 1600x900 --port 8 2>&1)"
+  status=$?
+  set -e
+
+  [[ "$status" -ne 0 ]] || { fail "expected unsupported engine to fail"; return 1; }
+  assert_contains "$output" 'unsupported container engine: nerdctl' || return 1
+}
+
+test_start_errors_when_no_container_engine_is_available() {
+  with_fake_path absent absent
+  trap cleanup_fake_path RETURN
+
+  local output status
+  set +e
+  output="$(run_script start demo --resolution 1600x900 --port 8 2>&1)"
+  status=$?
+  set -e
+
+  [[ "$status" -ne 0 ]] || { fail "expected missing engines to fail"; return 1; }
+  assert_contains "$output" 'install docker or podman before running GUI containers' || return 1
 }
 
 test_start_defaults_name_resolution_display_number_and_xfce() {
@@ -418,6 +489,7 @@ test_help_is_default_and_aliases_work_without_runtime() {
   assert_contains "$output_no_args" 'Usage:' || return 1
   assert_contains "$output_no_args" 'container gui start [CONTAINER_NAME]' || return 1
   assert_contains "$output_no_args" '--desktop xfce|openbox' || return 1
+  assert_contains "$output_no_args" '--engine docker|podman' || return 1
   assert_not_contains "$output_no_args" '--container-name' || return 1
   assert_contains "$output_help" 'Usage:' || return 1
   assert_contains "$output_long" 'Usage:' || return 1
@@ -439,8 +511,13 @@ run_test() {
   fi
 }
 
-run_test test_start_prefers_docker_and_prints_connection_details
-run_test test_start_falls_back_to_podman
+run_test test_start_prefers_podman_and_prints_connection_details
+run_test test_start_falls_back_to_docker
+run_test test_start_uses_requested_docker_engine
+run_test test_start_uses_requested_podman_engine
+run_test test_start_rejects_unavailable_requested_engine
+run_test test_start_rejects_unsupported_engine
+run_test test_start_errors_when_no_container_engine_is_available
 run_test test_start_defaults_name_resolution_display_number_and_xfce
 run_test test_openbox_desktop_uses_openbox_image_and_start_command
 run_test test_invalid_desktop_fails

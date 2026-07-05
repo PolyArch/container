@@ -144,6 +144,7 @@ $HOME/.cache/container/container-image-<ACTION>-<date-time>-<engine-image>.err
 
 ```bash
 container gui start eda --resolution 2560x1440 --port 2
+container gui start eda --engine podman --resolution 2560x1440 --port 2
 container gui status eda
 container gui check eda
 container gui list
@@ -156,6 +157,8 @@ The GUI image is built locally from `images/gui.containerfile` as
 `ucla.edu/polyarch/container-gui-<containerfile-hash>:latest`. `xfce` is the
 default desktop and `openbox` is a lightweight fallback inside the same GUI
 image.
+Use `--engine docker|podman` to select the GUI container engine. If omitted,
+`container gui` defaults to Podman when available, then Docker.
 Managed GUI container names always use the `container-gui-*` prefix. A command
 such as `container gui start eda` creates `container-gui-eda`; omitting the name
 creates `container-gui-YYYYMMDD-hhmmss`.
