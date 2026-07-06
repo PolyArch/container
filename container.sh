@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 IMAGE_DIR="$SCRIPT_DIR/images"
 IMAGE_PREFIX="ucla.edu/polyarch/container"
 DEFAULT_ENGINE_TYPE="podman"

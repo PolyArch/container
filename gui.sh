@@ -8,8 +8,10 @@ DISPLAY_NUMBER=""
 DESKTOP="xfce"
 REQUESTED_ENGINE=""
 POSITIONALS=()
+CUA_ARGS=()
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 GUI_CONTAINERFILE="$SCRIPT_DIR/images/gui.containerfile"
 IMAGE_PREFIX="${CONTAINER_GUI_IMAGE_PREFIX:-ucla.edu/polyarch/container}"
 MANAGED_LABEL="ucla.polyarch.container.gui"
@@ -22,21 +24,26 @@ container gui - run an EL9 Xvnc container as a local X11 display.
 
 Usage:
   container gui help
-  container gui start [CONTAINER_NAME] [--resolution WIDTHxHEIGHT]
-                                      [--port N] [--desktop xfce|openbox]
-                                      [--engine docker|podman]
-  container gui stop|remove|restart|enable|status|check CONTAINER_NAME
+  container gui start|create [CONTAINER_NAME] [--resolution WIDTHxHEIGHT]
+                                             [--port N] [--desktop xfce|openbox]
+                                             [--engine docker|podman]
+  container gui stop|remove|delete|restart|enable|status|check CONTAINER_NAME
   container gui list
+  container gui use help|-h|--help
+  container gui use CONTAINER_NAME CUA_ACTION [CUA_ACTION_OPTIONS]
 
 Actions:
   start    create and start an Xvnc-backed X11 container
+  create   alias for start
   stop     stop a named managed container
   remove   remove a named managed container
+  delete   alias for remove
   restart  restart a named managed container
   enable   set restart policy for a named managed container
   status   show state and connection details for a named managed container
   check    alias for status
   list     list managed containers
+  use      control a managed GUI container through its VNC/RFB endpoint
   help     show this help
 
 Options:
@@ -59,6 +66,12 @@ Examples:
   container gui status eda
   DISPLAY=127.0.0.1:2 rtl_shell -gui
   Connect a VNC viewer to vnc://127.0.0.1:5902
+
+Notes:
+  Some GUI programs still read from stdin after opening their window. When
+  launching one from a background or non-interactive shell, keep stdin open;
+  otherwise the program may see EOF and exit after startup. For automation:
+    tail -f /dev/null | DISPLAY=127.0.0.1:N <gui-command>
 EOF
 }
 
@@ -70,6 +83,11 @@ die() {
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -h|--help)
+      if [[ "$ACTION" == use || "${POSITIONALS[0]:-}" == use ]]; then
+        CUA_ARGS=("help")
+        shift
+        break
+      fi
       usage
       exit 0
       ;;
@@ -111,6 +129,10 @@ while [[ $# -gt 0 ]]; do
       done
       ;;
     -*)
+      if [[ "$ACTION" == use || "${POSITIONALS[0]:-}" == use ]]; then
+        CUA_ARGS=("$@")
+        break
+      fi
       die "unknown argument: $1 (try --help)"
       ;;
     *)
@@ -135,13 +157,26 @@ if [[ "$ACTION" == help ]]; then
   exit 0
 fi
 
-if [[ "$ACTION" == check ]]; then
-  ACTION="status"
-fi
+case "$ACTION" in
+  check)
+    ACTION="status"
+    ;;
+  create)
+    ACTION="start"
+    ;;
+  delete)
+    ACTION="remove"
+    ;;
+esac
 
 if [[ -z "$RAW_NAME" && ${#POSITIONALS[@]} -gt $positional_index ]]; then
   RAW_NAME="${POSITIONALS[$positional_index]}"
   positional_index=$((positional_index + 1))
+fi
+
+if [[ "$ACTION" == use && ${#POSITIONALS[@]} -gt $positional_index ]]; then
+  CUA_ARGS=("${POSITIONALS[@]:$positional_index}" "${CUA_ARGS[@]}")
+  positional_index="${#POSITIONALS[@]}"
 fi
 
 if (( ${#POSITIONALS[@]} > positional_index )); then
@@ -149,8 +184,8 @@ if (( ${#POSITIONALS[@]} > positional_index )); then
 fi
 
 case "$ACTION" in
-  start|stop|remove|restart|enable|status|list) ;;
-  *) die "action must be one of start, stop, remove, restart, enable, status, check, list, help" ;;
+  start|stop|remove|restart|enable|status|list|use) ;;
+  *) die "action must be one of start, create, stop, remove, delete, restart, enable, status, check, list, use, help" ;;
 esac
 
 case "$DESKTOP" in
@@ -402,6 +437,24 @@ inspect_value() {
   printf '%s\n' "$value"
 }
 
+managed_display_number() {
+  local runtime="$1" container="$2"
+  local managed display
+
+  "$runtime" inspect "$container" >/dev/null 2>&1 \
+    || die "container not found: ${container}"
+
+  managed="$(inspect_value "$runtime" "$container" '{{ index .Config.Labels "ucla.polyarch.container.gui" }}')"
+  [[ "$managed" == true ]] \
+    || die "container is not managed by container gui: ${container}"
+
+  display="$(inspect_value "$runtime" "$container" '{{ index .Config.Labels "ucla.polyarch.container.gui.display" }}')"
+  [[ "$display" =~ ^[0-9]+$ ]] \
+    || die "managed display label is missing or invalid: ${container}"
+
+  printf '%s\n' "$display"
+}
+
 status_container() {
   local runtime="$1" container="$2"
   local managed state runtime_status image restart display resolution desktop
@@ -467,6 +520,62 @@ start_container() {
   print_connection_info "$runtime" "$container" "$resolution" "$display" "$desktop"
 }
 
+use_usage() {
+  cat <<'EOF'
+container gui use - control a managed GUI container through VNC/RFB.
+
+Usage:
+  container gui use help
+  container gui use -h|--help
+  container gui use CONTAINER_NAME screenshot --output PATH [--region X,Y,W,H]
+  container gui use CONTAINER_NAME click --x N --y N [--button left|middle|right]
+  container gui use CONTAINER_NAME double_click --x N --y N [--button left|middle|right] [--interval MS]
+  container gui use CONTAINER_NAME move --x N --y N
+  container gui use CONTAINER_NAME drag --from-x N --from-y N --to-x N --to-y N [--button left|middle|right] [--duration MS]
+  container gui use CONTAINER_NAME scroll --x N --y N --dy N
+  container gui use CONTAINER_NAME type --text TEXT
+  container gui use CONTAINER_NAME keypress --key KEY
+  container gui use CONTAINER_NAME wait --seconds N
+  container gui use CONTAINER_NAME sequence --input PATH|-
+EOF
+}
+
+cua_helper_path() {
+  printf '%s\n' "${CONTAINER_GUI_CUA_HELPER:-$SCRIPT_DIR/scripts/container-gui-cua.py}"
+}
+
+ensure_cua_dependency() {
+  local helper="$1"
+  [[ -x "$helper" ]] || die "CUA helper is not executable: $helper"
+  "$helper" --check-dependency
+}
+
+run_cua_action() {
+  local runtime="$1" container="$2" display vnc_port helper
+  shift 2
+
+  [[ $# -gt 0 ]] || die "CUA action is required"
+
+  display="$(managed_display_number "$runtime" "$container")"
+  vnc_port=$((5900 + display))
+  helper="$(cua_helper_path)"
+  [[ -x "$helper" ]] || die "CUA helper is not executable: $helper"
+
+  "$helper" --vnc "127.0.0.1:${vnc_port}" "$@"
+}
+
+if [[ "$ACTION" == use ]]; then
+  if [[ "$RAW_NAME" == help && ${#CUA_ARGS[@]} -eq 0 ]]; then
+    use_usage
+    exit 0
+  fi
+  if [[ ${CUA_ARGS[0]:-} == help || ${CUA_ARGS[0]:-} == -h || ${CUA_ARGS[0]:-} == --help ]]; then
+    use_usage
+    exit 0
+  fi
+  ensure_cua_dependency "$(cua_helper_path)"
+fi
+
 runtime="$(select_runtime "$REQUESTED_ENGINE")"
 
 if [[ "$ACTION" == list ]]; then
@@ -512,5 +621,8 @@ case "$ACTION" in
   enable)
     "$runtime" update --restart=unless-stopped "$container"
     printf 'Enabled runtime restart policy for: %s\n' "$container"
+    ;;
+  use)
+    run_cua_action "$runtime" "$container" "${CUA_ARGS[@]}"
     ;;
 esac

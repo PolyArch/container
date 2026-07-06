@@ -80,6 +80,25 @@ EOF
   make_fake_runtime "$bin_dir" docker "$docker_mode"
   make_fake_runtime "$bin_dir" podman "$podman_mode"
 
+  cat >"$tmp/cua-helper" <<'EOF'
+#!/usr/bin/env bash
+printf 'cua-helper' >>"$CONTAINER_GUI_TEST_STATE/commands"
+for arg in "$@"; do
+  printf ' %s' "$arg" >>"$CONTAINER_GUI_TEST_STATE/commands"
+done
+printf '\n' >>"$CONTAINER_GUI_TEST_STATE/commands"
+if [[ "${1:-}" == --check-dependency ]]; then
+  if [[ "${CONTAINER_GUI_TEST_CUA_DEPENDENCY:-present}" == missing ]]; then
+    printf 'container gui: missing Python dependency: vncdotool\n' >&2
+    printf 'install it with: python3 -m pip install --user vncdotool\n' >&2
+    exit 1
+  fi
+  exit 0
+fi
+printf 'helper ok\n'
+EOF
+  chmod +x "$tmp/cua-helper"
+
   CONTAINER_GUI_TEST_TMP="$tmp"
   CONTAINER_GUI_TEST_BIN="$bin_dir"
 }
@@ -165,7 +184,7 @@ case "$cmd" in
         printf '%s\n' "$CONTAINER_GUI_TEST_IMAGE"
         ;;
       *ucla.polyarch.container.gui.display*)
-        printf '7\n'
+        printf '%s\n' "${CONTAINER_GUI_TEST_DISPLAY-7}"
         ;;
       *ucla.polyarch.container.gui.resolution*)
         printf '1600x900\n'
@@ -174,7 +193,7 @@ case "$cmd" in
         printf 'xfce\n'
         ;;
       *ucla.polyarch.container.gui*)
-        printf 'true\n'
+        printf '%s\n' "${CONTAINER_GUI_TEST_MANAGED:-true}"
         ;;
     esac
     exit 0
@@ -197,6 +216,7 @@ run_script() {
   PATH="$CONTAINER_GUI_TEST_BIN:$PATH" \
     CONTAINER_GUI_TEST_STATE="$CONTAINER_GUI_TEST_TMP" \
     CONTAINER_GUI_TEST_IMAGE="$(gui_image_name)" \
+    CONTAINER_GUI_CUA_HELPER="$CONTAINER_GUI_TEST_TMP/cua-helper" \
     bash "$SCRIPT" gui "$@"
 }
 
@@ -339,6 +359,19 @@ test_start_defaults_name_resolution_display_number_and_xfce() {
   assert_contains "$commands" '-geometry 3840x2160' || return 1
 }
 
+test_create_is_start_alias() {
+  with_fake_path present present
+  trap cleanup_fake_path RETURN
+
+  local output commands
+  output="$(run_script create demo --resolution 1600x900 --port 7)"
+  commands="$(commands_log)"
+
+  assert_contains "$output" 'Container: container-gui-demo' || return 1
+  assert_contains "$commands" 'podman run' || return 1
+  assert_contains "$commands" '--name container-gui-demo' || return 1
+}
+
 test_openbox_desktop_uses_openbox_image_and_start_command() {
   with_fake_path present absent
   trap cleanup_fake_path RETURN
@@ -418,6 +451,18 @@ test_lifecycle_actions_use_prefixed_container_name() {
   assert_contains "$commands" 'docker update --restart=unless-stopped container-gui-demo' || return 1
 }
 
+test_delete_is_remove_alias() {
+  with_fake_path present absent
+  trap cleanup_fake_path RETURN
+
+  local output commands
+  output="$(run_script delete demo)"
+  commands="$(commands_log)"
+
+  assert_contains "$output" 'Removed: container-gui-demo' || return 1
+  assert_contains "$commands" 'docker rm -f container-gui-demo' || return 1
+}
+
 test_prefixed_name_is_not_prefixed_twice() {
   with_fake_path present absent
   trap cleanup_fake_path RETURN
@@ -475,6 +520,97 @@ test_list_uses_managed_container_label() {
   assert_contains "$commands" 'docker ps -a --filter label=ucla.polyarch.container.gui=true' || return 1
 }
 
+test_use_invokes_cua_helper_with_vnc_endpoint() {
+  with_fake_path present absent
+  trap cleanup_fake_path RETURN
+
+  local output commands
+  output="$(run_script use demo click --x 1 --y 2)"
+  commands="$(commands_log)"
+
+  assert_contains "$output" 'helper ok' || return 1
+  assert_contains "$commands" 'cua-helper --check-dependency' || return 1
+  assert_contains "$commands" 'docker inspect container-gui-demo' || return 1
+  assert_contains "$commands" 'cua-helper --vnc 127.0.0.1:5907 click --x 1 --y 2' || return 1
+}
+
+test_use_missing_vncdotool_fails_before_container_inspect() {
+  with_fake_path present absent
+  trap cleanup_fake_path RETURN
+
+  local output status commands
+  set +e
+  output="$(CONTAINER_GUI_TEST_CUA_DEPENDENCY=missing run_script use demo click --x 1 --y 2 2>&1)"
+  status=$?
+  set -e
+  commands="$(commands_log)"
+
+  [[ "$status" -ne 0 ]] || { fail "expected missing dependency to fail"; return 1; }
+  assert_contains "$output" 'missing Python dependency: vncdotool' || return 1
+  assert_contains "$output" 'python3 -m pip install --user vncdotool' || return 1
+  assert_contains "$commands" 'cua-helper --check-dependency' || return 1
+  assert_not_contains "$commands" 'docker inspect container-gui-demo' || return 1
+}
+
+test_use_respects_requested_engine() {
+  with_fake_path present present
+  trap cleanup_fake_path RETURN
+
+  local output commands
+  output="$(run_script use demo --engine docker screenshot --output /tmp/screen.png)"
+  commands="$(commands_log)"
+
+  assert_contains "$output" 'helper ok' || return 1
+  assert_contains "$commands" 'docker inspect container-gui-demo' || return 1
+  assert_not_contains "$commands" 'podman inspect container-gui-demo' || return 1
+  assert_contains "$commands" 'cua-helper --vnc 127.0.0.1:5907 screenshot --output /tmp/screen.png' || return 1
+}
+
+test_use_rejects_unmanaged_container() {
+  with_fake_path present absent
+  trap cleanup_fake_path RETURN
+
+  local output status
+  set +e
+  output="$(CONTAINER_GUI_TEST_MANAGED=false run_script use demo click --x 1 --y 2 2>&1)"
+  status=$?
+  set -e
+
+  [[ "$status" -ne 0 ]] || { fail "expected unmanaged container to fail"; return 1; }
+  assert_contains "$output" 'container is not managed by container gui: container-gui-demo' || return 1
+}
+
+test_use_rejects_missing_display_label() {
+  with_fake_path present absent
+  trap cleanup_fake_path RETURN
+
+  local output status
+  set +e
+  output="$(CONTAINER_GUI_TEST_DISPLAY='' run_script use demo click --x 1 --y 2 2>&1)"
+  status=$?
+  set -e
+
+  [[ "$status" -ne 0 ]] || { fail "expected missing display label to fail"; return 1; }
+  assert_contains "$output" 'managed display label is missing or invalid: container-gui-demo' || return 1
+}
+
+test_use_help_works_without_runtime() {
+  with_fake_path absent absent
+  trap cleanup_fake_path RETURN
+
+  local output_help output_short output_long commands
+  output_help="$(run_script use help)"
+  output_short="$(run_script use -h)"
+  output_long="$(run_script use --help)"
+  commands="$(commands_log)"
+
+  assert_contains "$output_help" 'Usage:' || return 1
+  assert_contains "$output_help" 'container gui use CONTAINER_NAME' || return 1
+  assert_contains "$output_short" 'Usage:' || return 1
+  assert_contains "$output_long" 'Usage:' || return 1
+  [[ -z "$commands" ]] || { fail "use help should not call runtime, got: $commands"; return 1; }
+}
+
 test_help_is_default_and_aliases_work_without_runtime() {
   with_fake_path absent absent
   trap cleanup_fake_path RETURN
@@ -487,9 +623,11 @@ test_help_is_default_and_aliases_work_without_runtime() {
   commands="$(commands_log)"
 
   assert_contains "$output_no_args" 'Usage:' || return 1
-  assert_contains "$output_no_args" 'container gui start [CONTAINER_NAME]' || return 1
+  assert_contains "$output_no_args" 'container gui start|create [CONTAINER_NAME]' || return 1
   assert_contains "$output_no_args" '--desktop xfce|openbox' || return 1
   assert_contains "$output_no_args" '--engine docker|podman' || return 1
+  assert_contains "$output_no_args" 'keep stdin open' || return 1
+  assert_contains "$output_no_args" 'tail -f /dev/null | DISPLAY=127.0.0.1:N <gui-command>' || return 1
   assert_not_contains "$output_no_args" '--container-name' || return 1
   assert_contains "$output_help" 'Usage:' || return 1
   assert_contains "$output_long" 'Usage:' || return 1
@@ -500,6 +638,18 @@ test_help_is_default_and_aliases_work_without_runtime() {
 test_setup_installs_container_cli() {
   grep -q 'container.sh' "$SETUP" || fail "setup.sh does not install container CLI" || return 1
   grep -q 'container.sh' "$SETUP" || fail "setup.sh should install container.sh" || return 1
+}
+
+test_installed_symlink_resolves_repo_scripts() {
+  with_fake_path absent absent
+  trap cleanup_fake_path RETURN
+
+  local link output
+  link="$CONTAINER_GUI_TEST_TMP/container"
+  ln -s "$SCRIPT" "$link"
+  output="$(PATH="$CONTAINER_GUI_TEST_BIN:$PATH" "$link" gui help)"
+
+  assert_contains "$output" 'container gui - run an EL9 Xvnc container' || return 1
 }
 
 run_test() {
@@ -519,17 +669,26 @@ run_test test_start_rejects_unavailable_requested_engine
 run_test test_start_rejects_unsupported_engine
 run_test test_start_errors_when_no_container_engine_is_available
 run_test test_start_defaults_name_resolution_display_number_and_xfce
+run_test test_create_is_start_alias
 run_test test_openbox_desktop_uses_openbox_image_and_start_command
 run_test test_invalid_desktop_fails
 run_test test_resolution_larger_than_physical_fails
 run_test test_non_start_actions_require_container_name
 run_test test_lifecycle_actions_use_prefixed_container_name
+run_test test_delete_is_remove_alias
 run_test test_prefixed_name_is_not_prefixed_twice
 run_test test_status_reports_state_and_connection_details
 run_test test_check_is_status_alias
 run_test test_list_uses_managed_container_label
+run_test test_use_invokes_cua_helper_with_vnc_endpoint
+run_test test_use_missing_vncdotool_fails_before_container_inspect
+run_test test_use_respects_requested_engine
+run_test test_use_rejects_unmanaged_container
+run_test test_use_rejects_missing_display_label
+run_test test_use_help_works_without_runtime
 run_test test_help_is_default_and_aliases_work_without_runtime
 run_test test_setup_installs_container_cli
+run_test test_installed_symlink_resolves_repo_scripts
 
 if (( FAILURES )); then
   printf 'not ok - container gui tests (%d failed)\n' "$FAILURES" >&2

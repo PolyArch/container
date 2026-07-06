@@ -144,6 +144,7 @@ $HOME/.cache/container/container-image-<ACTION>-<date-time>-<engine-image>.err
 
 ```bash
 container gui start eda --resolution 2560x1440 --port 2
+container gui create eda --resolution 2560x1440 --port 2
 container gui start eda --engine podman --resolution 2560x1440 --port 2
 container gui status eda
 container gui check eda
@@ -151,6 +152,11 @@ container gui list
 container gui stop eda
 container gui restart eda
 container gui remove eda
+container gui delete eda
+container gui use help
+container gui use eda screenshot --output /tmp/eda.png
+container gui use eda click --x 120 --y 240
+container gui use eda sequence --input actions.json
 ```
 
 The GUI image is built locally from `images/gui.containerfile` as
@@ -162,6 +168,54 @@ Use `--engine docker|podman` to select the GUI container engine. If omitted,
 Managed GUI container names always use the `container-gui-*` prefix. A command
 such as `container gui start eda` creates `container-gui-eda`; omitting the name
 creates `container-gui-YYYYMMDD-hhmmss`.
+`container gui create` is an alias for `start`, and `container gui delete` is an
+alias for `remove`.
+
+`container gui use` sends Computer Use actions through the managed container's
+VNC/RFB endpoint. It does not use the host X11 socket or run commands inside
+the GUI container. Install the host-side VNC client dependency before using it:
+
+```bash
+python3 -m pip install --user vncdotool
+```
+
+`container gui use help`, `container gui use -h`, and `container gui use --help`
+print the CUA help without requiring a container name. Other `container gui use`
+commands check for `vncdotool` before inspecting the target container and report
+the install command when the dependency is missing.
+
+Single actions:
+
+```bash
+container gui use eda screenshot --output /tmp/screen.png
+container gui use eda screenshot --output /tmp/region.png --region 0,0,800,600
+container gui use eda click --x 120 --y 240
+container gui use eda double_click --x 120 --y 240
+container gui use eda move --x 120 --y 240
+container gui use eda drag --from-x 100 --from-y 200 --to-x 400 --to-y 500
+container gui use eda scroll --x 120 --y 240 --dy -5
+container gui use eda type --text "hello"
+container gui use eda keypress --key Enter
+container gui use eda wait --seconds 0.5
+```
+
+Batch actions can be supplied as JSON:
+
+```bash
+container gui use eda sequence --input actions.json
+container gui use eda sequence --input -
+```
+
+```json
+[
+  {"action": "screenshot", "output": "/tmp/before.png"},
+  {"action": "click", "x": 120, "y": 240},
+  {"action": "wait", "seconds": 0.5},
+  {"action": "type", "text": "hello"},
+  {"action": "keypress", "key": "Enter"},
+  {"action": "screenshot", "output": "/tmp/after.png", "region": [0, 0, 800, 600]}
+]
+```
 
 ## Network Access
 
