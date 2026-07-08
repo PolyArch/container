@@ -17,14 +17,14 @@ RUN yum -y update && \
     yum install -y redhat-lsb-core passwd && \
     yum -y install \
         # Basic development and shell tools
-        ksh csh xterm tcsh tcl-devel file which gcc gcc-c++ make curl tar gzip iptables iptables-services \
+        ksh csh xterm tcsh tcl-devel file which gcc gcc-c++ make python3 curl tar gzip iptables iptables-services \
         # X11 and GUI libraries required for EDA GUI applications
         libXp libXtst libXext libXft libXmu libXrandr libXrender \
         libXi libXcursor libXinerama libXdmcp libXau libxcb \
         motif motif-devel gtk2 gtk2-devel \
         # Core system libraries
         glibc glibc-devel \
-        libgcc libstdc++ \
+        libgcc libstdc++ libatomic \
         # Graphics and display libraries
         fontconfig freetype libpng libpng12 libjpeg-turbo \
         mesa-libGL mesa-libGLU mesa-dri-drivers \

@@ -17,14 +17,14 @@ RUN dnf -y update && \
     dnf install -y lsb-release && \
     dnf -y install \
         # Basic development and shell tools
-        ksh csh xterm tcsh tcl-devel file which gcc gcc-c++ make iptables iptables-services environment-modules \
+        ksh csh xterm tcsh tcl-devel file which gcc gcc-c++ make python3 iptables iptables-services environment-modules \
         # X11 and GUI libraries required for EDA GUI applications
         libXp libXtst libXext libXft libXmu libXrandr libXrender \
         libXi libXcursor libXinerama libXdmcp libXau libxcb \
         motif motif-devel gtk2 gtk2-devel \
         # Core system libraries
         glibc glibc-devel \
-        libgcc libstdc++ \
+        libgcc libstdc++ libatomic \
         # Graphics and display libraries
         fontconfig freetype libpng libjpeg-turbo \
         mesa-libGL mesa-libGLU mesa-dri-drivers \
