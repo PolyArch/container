@@ -24,7 +24,7 @@ RUN yum -y update && \
         motif motif-devel gtk2 gtk2-devel \
         # Core system libraries
         glibc glibc-devel \
-        libgcc libstdc++ libatomic \
+        libgcc libstdc++ libatomic snappy \
         # Graphics and display libraries
         fontconfig freetype libpng libpng12 libjpeg-turbo \
         mesa-libGL mesa-libGLU mesa-dri-drivers \
