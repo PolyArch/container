@@ -30,7 +30,7 @@ RUN dnf -y update && \
         mesa-libGL mesa-libGLU mesa-dri-drivers \
         libSM libICE \
         # Additional dependencies specific to EDA tools
-        nss procps-ng elfutils-libelf-devel libssh \
+        nss procps-ng elfutils-libelf-devel libssh libusb1 \
         dbus dbus-devel dbus-tools \
         libtiff openssl-devel apr-util libxcrypt-compat libnsl \
         "xcb-util-*" xkeyboard-config libxkbcommon-x11 \
