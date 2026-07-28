@@ -34,6 +34,8 @@ RUN yum -y update && \
         # Additional dependencies specific to EDA tools
         nss procps-ng elfutils-libelf-devel pciutils-libs libzstd orc \
         lm_sensors-libs cyrus-sasl-lib \
+        # Synopsys TCM
+        libtool-ltdl \
         numactl-libs pcre2 pcre2-utf16 libssh libidn2 glibc.i686 ncurses-libs.i686 \
         libXScrnSaver dbus dbus-devel \
         libtiff openssl-devel apr-util \
