@@ -39,6 +39,8 @@ RUN dnf -y update && \
         openldap-compat \
         # Cadence SPB
         libtirpc pciutils-libs \
+        # Synopsys StarRC
+        lm_sensors-libs cyrus-sasl-lib \
         # Cadence Stratus
         perl \
         # Cadence Innovus

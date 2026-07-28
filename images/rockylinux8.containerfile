@@ -39,6 +39,8 @@ RUN dnf -y update && \
         compat-openssl10 \
         # Cadence SPB
         pciutils-libs \
+        # Synopsys StarRC
+        lm_sensors-libs cyrus-sasl-lib \
         # Cadence Stratus
         perl \
         # Cadence Innovus
