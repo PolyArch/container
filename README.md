@@ -11,6 +11,14 @@ container [run|image|gui]
 Run `./setup.sh` to expose this repository's `container.sh` as
 `~/.local/bin/container`, or run `./container.sh` directly from this checkout.
 
+The current CLI release is `v0.1.0`. Display the installed version with either
+form:
+
+```bash
+container --version
+container -V
+```
+
 ## Run Containers
 
 ```bash
@@ -63,6 +71,8 @@ Help is available at each level:
 
 ```bash
 container help
+container --version
+container -V
 container run -h
 container run --help
 container image -h

@@ -7,6 +7,8 @@ IMAGE_DIR="$SCRIPT_DIR/images"
 IMAGE_PREFIX="ucla.edu/polyarch/container"
 DEFAULT_ENGINE_TYPE="podman"
 HASH_LENGTH=12
+CONTAINER_VERSION="v0.1.0"
+CONTAINER_PROJECT_URL="https://github.com/PolyArch/container"
 
 die() {
     printf 'container: %s\n' "$*" >&2
@@ -15,6 +17,10 @@ die() {
 
 warn() {
     printf 'Warning: %s\n' "$*" >&2
+}
+
+print_version() {
+    printf 'PolyArch container %s (%s)\n' "$CONTAINER_VERSION" "$CONTAINER_PROJECT_URL"
 }
 
 COLOR_RESET=$'\033[0m'
@@ -190,11 +196,16 @@ fi'
 }
 
 top_usage() {
+    print_version
     cat <<'USAGE'
+
 Usage:
   container run [OPTIONS] [--] [COMMAND [ARGS...]]
   container image [create|update|list|clean] [OPTIONS]
   container gui [ACTION] [CONTAINER_NAME] [OPTIONS]
+
+Global options:
+  -V, --version  Show the PolyArch container version.
 
 Commands:
   run      Start a tool container and optionally run a command inside it.
@@ -1595,6 +1606,9 @@ main() {
         gui)
             shift
             exec bash "$SCRIPT_DIR/gui.sh" "$@"
+            ;;
+        -V|--version)
+            print_version
             ;;
         help|-h|--help|"")
             top_usage

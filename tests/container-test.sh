@@ -305,9 +305,29 @@ container_xauthority_from_commands() {
 test_container_cli_is_standalone() {
   local output
   output="$(bash "$REPO_ROOT/container.sh" help)"
+  assert_contains "$output" "PolyArch container v0.1.0 (https://github.com/PolyArch/container)" || return 1
   assert_contains "$output" "container run" || return 1
   assert_contains "$output" "container image" || return 1
   assert_contains "$output" "container gui" || return 1
+}
+
+test_version_variants_are_exact_and_side_effect_free() {
+  setup_fake_podman
+  trap cleanup_fake_podman RETURN
+  local expected="PolyArch container v0.1.0 (https://github.com/PolyArch/container)"
+
+  run_container_cli --version
+  assert_status "$EDA_TEST_LAST_STATUS" 0 || return 1
+  [[ "$EDA_TEST_LAST_OUTPUT" == "$expected" ]] \
+    || { fail "unexpected --version output: $EDA_TEST_LAST_OUTPUT"; return 1; }
+
+  run_container_cli -V
+  assert_status "$EDA_TEST_LAST_STATUS" 0 || return 1
+  [[ "$EDA_TEST_LAST_OUTPUT" == "$expected" ]] \
+    || { fail "unexpected -V output: $EDA_TEST_LAST_OUTPUT"; return 1; }
+
+  [[ ! -s "$EDA_TEST_COMMANDS" ]] \
+    || { fail "version output should not call podman"; return 1; }
 }
 
 test_run_defaults_to_inherit_env_and_host_network() {
@@ -508,6 +528,7 @@ test_help_variants_are_detailed_and_side_effect_free() {
 
   run_container_cli help
   assert_status "$EDA_TEST_LAST_STATUS" 0 || return 1
+  assert_contains "$EDA_TEST_LAST_OUTPUT" "PolyArch container v0.1.0 (https://github.com/PolyArch/container)" || return 1
   assert_contains "$EDA_TEST_LAST_OUTPUT" "Usage:" || return 1
   assert_contains "$EDA_TEST_LAST_OUTPUT" "container run" || return 1
   assert_contains "$EDA_TEST_LAST_OUTPUT" "container image" || return 1
@@ -875,6 +896,7 @@ run_test() {
 }
 
 run_test test_container_cli_is_standalone
+run_test test_version_variants_are_exact_and_side_effect_free
 run_test test_run_defaults_to_inherit_env_and_host_network
 run_test test_run_requires_os
 run_test test_run_preserves_existing_achronix_accept_file
