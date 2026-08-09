@@ -1,0 +1,52 @@
+# Local runtime and test work
+temp/
+container-work_*/
+.Xil/
+.achronix/
+.Xilinx/
+.cache/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+!env.example
+
+# Build and image artifacts
+build/
+dist/
+*.oci
+*.sif
+*.tar
+*.tar.gz
+*.tgz
+
+# Logs and process state
+*.log
+*.err
+*.out
+*.pid
+*.tmp
+*.bak
+*.orig
+
+# Python caches and virtual environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+.venv/
+venv/
+
+# Editor and operating-system metadata
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~

@@ -259,7 +259,7 @@ The restricted mode requires the `ip_tables`, `iptable_filter`, and
 | `/mnt/nas0` | `/mnt/nas0` read-only | Shared software, mounted when present. |
 | `<workdir>` | `/home/<user>/work` read-write | Project work directory. |
 | `$HOME/.Xilinx/license.lic` | `/home/<user>/.Xilinx/license.lic` read-only | Xilinx license file, mounted when present. |
-| `$HOME/.achronix/.accept` | `/home/<user>/.achronix/.accept` read-only | Achronix acceptance file. Created with `Achronix_License=2023` when missing. |
+| `$HOME/.achronix/.accept` | `/home/<user>/.achronix/.accept` read-only | Mounted only when the existing file contains `Achronix_License`. The CLI never creates or modifies this EULA acceptance file. |
 | `/tmp/.X11-unix` | `/tmp/.X11-unix` | X11 socket, mounted when `DISPLAY` is set. |
 
 ## Files

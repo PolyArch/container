@@ -347,8 +347,11 @@ test_run_defaults_to_inherit_env_and_host_network() {
   assert_contains "$log" "[--network=host]" || return 1
   assert_contains "$log" "[-v][$workdir:/home/edauser/work:rw]" || return 1
   assert_not_contains "$log" "[-v][$workdir:/home/edauser:rw]" || return 1
-  assert_file_contains "$EDA_TEST_HOME/.achronix/.accept" "Achronix_License=2023" || return 1
-  assert_contains "$log" "[-v][$EDA_TEST_HOME/.achronix/.accept:/home/edauser/.achronix/.accept:ro]" || return 1
+  [[ ! -e "$EDA_TEST_HOME/.achronix/.accept" ]] || {
+    fail "run should not create an Achronix accept file"
+    return 1
+  }
+  assert_not_contains "$log" ".achronix/.accept" || return 1
   assert_contains "$log" "[-e][DISPLAY=:0]" || return 1
   assert_not_contains "$log" "[-e][XAUTHORITY=$EDA_TEST_HOST_XAUTH]" || return 1
   local container_xauth
@@ -379,22 +382,40 @@ test_run_requires_os() {
   [[ ! -s "$EDA_TEST_COMMANDS" ]] || { fail "run without --os should not call container engine"; return 1; }
 }
 
-test_run_preserves_existing_achronix_accept_file() {
+test_run_mounts_existing_achronix_accept_file_with_license_marker() {
   setup_fake_podman
   trap cleanup_fake_podman RETURN
   local workdir="$EDA_TEST_TMP/work" accept_file="$EDA_TEST_HOME/.achronix/.accept"
   mkdir -p "$workdir" "$(dirname "$accept_file")"
-  printf 'custom-accept\n' >"$accept_file"
+  printf 'Achronix_License=2099\ncustom-setting=yes\n' >"$accept_file"
   printf '%s\n' "$(image_name almalinux8)" >"$EDA_TEST_IMAGES"
 
   run_container_cli run --os almalinux8 --workdir "$workdir"
 
   assert_status "$EDA_TEST_LAST_STATUS" 0 || return 1
-  [[ "$(<"$accept_file")" == "custom-accept" ]] || {
+  [[ "$(<"$accept_file")" == $'Achronix_License=2099\ncustom-setting=yes' ]] || {
     fail "existing Achronix accept file was modified"
     return 1
   }
   assert_contains "$(commands)" "[-v][$accept_file:/home/edauser/.achronix/.accept:ro]" || return 1
+}
+
+test_run_skips_existing_achronix_file_without_license_marker() {
+  setup_fake_podman
+  trap cleanup_fake_podman RETURN
+  local workdir="$EDA_TEST_TMP/work" accept_file="$EDA_TEST_HOME/.achronix/.accept"
+  mkdir -p "$workdir" "$(dirname "$accept_file")"
+  printf 'custom-setting=yes\n' >"$accept_file"
+  printf '%s\n' "$(image_name almalinux8)" >"$EDA_TEST_IMAGES"
+
+  run_container_cli run --os almalinux8 --workdir "$workdir"
+
+  assert_status "$EDA_TEST_LAST_STATUS" 0 || return 1
+  [[ "$(<"$accept_file")" == "custom-setting=yes" ]] || {
+    fail "existing Achronix file was modified"
+    return 1
+  }
+  assert_not_contains "$(commands)" ".achronix/.accept" || return 1
 }
 
 test_run_seeds_container_history_from_host_history_files() {
@@ -899,7 +920,8 @@ run_test test_container_cli_is_standalone
 run_test test_version_variants_are_exact_and_side_effect_free
 run_test test_run_defaults_to_inherit_env_and_host_network
 run_test test_run_requires_os
-run_test test_run_preserves_existing_achronix_accept_file
+run_test test_run_mounts_existing_achronix_accept_file_with_license_marker
+run_test test_run_skips_existing_achronix_file_without_license_marker
 run_test test_run_seeds_container_history_from_host_history_files
 run_test test_run_default_workdir_mounts_under_container_work
 run_test test_run_uses_env_file_and_restricted_network

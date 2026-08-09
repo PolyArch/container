@@ -152,15 +152,9 @@ image_action_log_dir() {
 }
 
 achronix_accept_file() {
-    local dir="${HOME:-$PWD}/.achronix"
-    local accept_file="$dir/.accept"
-    mkdir -p "$dir" || die "cannot create Achronix accept directory: $dir"
-    if [[ ! -e "$accept_file" ]]; then
-        printf 'Achronix_License=2023\n' >"$accept_file" \
-            || die "cannot create Achronix accept file: $accept_file"
-        chmod 644 "$accept_file" || die "cannot update Achronix accept file mode: $accept_file"
-    fi
-    [[ -f "$accept_file" ]] || die "Achronix accept path is not a file: $accept_file"
+    local accept_file="${HOME:-$PWD}/.achronix/.accept"
+    [[ -f "$accept_file" && -r "$accept_file" ]] || return 0
+    grep -Fq -- 'Achronix_License' "$accept_file" || return 0
     printf '%s\n' "$accept_file"
 }
 
@@ -931,7 +925,9 @@ cmd_run() {
     [[ -d /mnt/nas0 ]] && PODMAN_ARGS+=("-v" "/mnt/nas0:/mnt/nas0:ro")
     PODMAN_ARGS+=("-v" "$WORK_DIR:/home/$container_user/work:rw")
     achronix_file="$(achronix_accept_file)"
-    PODMAN_ARGS+=("-v" "$achronix_file:/home/$container_user/.achronix/.accept:ro")
+    if [[ -n "$achronix_file" ]]; then
+        PODMAN_ARGS+=("-v" "$achronix_file:/home/$container_user/.achronix/.accept:ro")
+    fi
     add_host_history_mounts
     if [[ -f "$HOME/.Xilinx/license.lic" ]]; then
         PODMAN_ARGS+=("-v" "$HOME/.Xilinx/license.lic:/home/$container_user/.Xilinx/license.lic:ro")
