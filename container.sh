@@ -4,10 +4,11 @@ set -euo pipefail
 SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 IMAGE_DIR="$SCRIPT_DIR/images"
+MATRIX_FILE="$SCRIPT_DIR/docs/container-matrix.md"
 IMAGE_PREFIX="ucla.edu/polyarch/container"
 DEFAULT_ENGINE_TYPE="podman"
 HASH_LENGTH=12
-CONTAINER_VERSION="v0.1.0"
+CONTAINER_VERSION="v0.2.0"
 CONTAINER_PROJECT_URL="https://github.com/PolyArch/container"
 
 die() {
@@ -189,6 +190,178 @@ fi'
     PODMAN_ARGS+=("${cmd_args[@]}")
 }
 
+matrix_usage() {
+    cat <<'USAGE'
+Usage:
+  container matrix
+
+Print the maintained compatibility results for NAS-hosted tools in a compact
+table. The EL7 through EL10 columns summarize recorded shell smoke tests in the
+representative runtime images; GUI summarizes startup through `container gui`.
+Use this command to choose a runtime before launching a tool. It reports stored
+validation evidence and does not probe tools or licenses live.
+
+Status codes:
+  O  Smoke test passed.
+  P  Partially supported; see the detailed matrix for the limitation.
+  B  Blocked by a known runtime or external requirement.
+  ?  Not yet validated.
+  -  Not applicable.
+USAGE
+}
+
+print_matrix() {
+    [[ -r "$MATRIX_FILE" ]] || die "support matrix is missing: $MATRIX_FILE"
+
+    awk -F ' \\| ' -v matrix_file="$MATRIX_FILE" '
+        function trim(value) {
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+            return value
+        }
+
+        function status_code(value, normalized) {
+            normalized = tolower(trim(value))
+            sub(/[[:space:]]*\|$/, "", normalized)
+            if (normalized ~ /^ok([[:space:]:]|$)/) {
+                return "O"
+            }
+            if (normalized ~ /^(partial|partially ok)([[:space:]:]|$)/) {
+                return "P"
+            }
+            if (normalized ~ /^blocked([[:space:]:]|$)/) {
+                return "B"
+            }
+            if (normalized ~ /^(not yet validated|gui not yet validated)([[:space:]:]|$)/) {
+                return "?"
+            }
+            if (normalized ~ /^n\/a([[:space:]:]|$)/) {
+                return "-"
+            }
+            return "!"
+        }
+
+        /^\| Vendor \/ Tool \/ Version/ || /^\| ---/ {
+            next
+        }
+
+        /^\| / {
+            if (NF != 6) {
+                printf "container: malformed support-matrix row: %s\n", $0 > "/dev/stderr"
+                invalid = 1
+                next
+            }
+
+            identity = $1
+            sub(/^\|[[:space:]]*/, "", identity)
+            separator = index(identity, " / ")
+            if (!separator) {
+                printf "container: malformed support-matrix identity: %s\n", identity > "/dev/stderr"
+                invalid = 1
+                next
+            }
+
+            vendor = substr(identity, 1, separator - 1)
+            item = substr(identity, separator + 3)
+            tick = index(item, "`")
+            if (tick) {
+                name = trim(substr(item, 1, tick - 1))
+                remainder = substr(item, tick + 1)
+                close_tick = index(remainder, "`")
+                if (!close_tick) {
+                    printf "container: malformed support-matrix release: %s\n", item > "/dev/stderr"
+                    invalid = 1
+                    next
+                }
+                release = substr(remainder, 1, close_tick - 1)
+                suffix = trim(substr(remainder, close_tick + 1))
+                gsub(/`/, "", suffix)
+                if (suffix != "") {
+                    release = release " " suffix
+                }
+                item = "[" release "] " name
+            } else {
+                gsub(/`/, "", item)
+            }
+
+            el7 = status_code($2)
+            el8 = status_code($3)
+            el9 = status_code($4)
+            el10 = status_code($5)
+            gui = status_code($6)
+            if (el7 == "!" || el8 == "!" || el9 == "!" || el10 == "!" || gui == "!") {
+                printf "container: unknown support-matrix status: %s\n", $0 > "/dev/stderr"
+                invalid = 1
+                next
+            }
+
+            if (!(vendor in vendor_seen)) {
+                vendor_seen[vendor] = 1
+                vendor_order[++vendor_count] = vendor
+            }
+            rows++
+            row_vendor[rows] = vendor
+            row_item[rows] = item
+            row_el7[rows] = el7
+            row_el8[rows] = el8
+            row_el9[rows] = el9
+            row_el10[rows] = el10
+            row_gui[rows] = gui
+            if (length(item) > item_width) {
+                item_width = length(item)
+            }
+        }
+
+        END {
+            if (!rows) {
+                print "container: support matrix has no tool rows" > "/dev/stderr"
+                invalid = 1
+            }
+            if (invalid) {
+                exit 2
+            }
+
+            if (item_width > 72) {
+                item_width = 72
+            }
+            row_format = "  %-" item_width "." item_width "s  %3s %3s %3s %4s %3s\n"
+            header_format = "  %-" item_width "s  %3s %3s %3s %4s %3s\n"
+
+            print "Container compatibility matrix (recorded smoke tests; not a live probe)"
+            print "Shell images: EL7=CentOS 7, EL8=AlmaLinux 8, EL9=AlmaLinux 9, EL10=AlmaLinux 10"
+            print "Status: O=ok  P=partial  B=blocked  ?=not validated  -=not applicable"
+            for (vendor_index = 1; vendor_index <= vendor_count; vendor_index++) {
+                vendor = vendor_order[vendor_index]
+                print ""
+                print vendor
+                printf header_format, "Tool / module", "EL7", "EL8", "EL9", "EL10", "GUI"
+                for (row = 1; row <= rows; row++) {
+                    if (row_vendor[row] == vendor) {
+                        printf row_format, row_item[row], row_el7[row], row_el8[row], row_el9[row], row_el10[row], row_gui[row]
+                    }
+                }
+            }
+            printf "\n%d tools. Detailed evidence: %s\n", rows, matrix_file
+        }
+    ' "$MATRIX_FILE"
+}
+
+cmd_matrix() {
+    if (( $# > 1 )); then
+        die "container matrix accepts no arguments"
+    fi
+    case "${1:-}" in
+        "")
+            print_matrix
+            ;;
+        help|-h|--help)
+            matrix_usage
+            ;;
+        *)
+            die "unknown matrix option: $1"
+            ;;
+    esac
+}
+
 top_usage() {
     print_version
     cat <<'USAGE'
@@ -197,6 +370,7 @@ Usage:
   container run [OPTIONS] [--] [COMMAND [ARGS...]]
   container image [create|update|list|clean] [OPTIONS]
   container gui [ACTION] [CONTAINER_NAME] [OPTIONS]
+  container matrix
 
 Global options:
   -V, --version  Show the PolyArch container version.
@@ -205,13 +379,20 @@ Commands:
   run      Start a tool container and optionally run a command inside it.
   image    List, build, update, or clean tool container images.
   gui      Manage a local Xvnc-backed GUI container.
+  matrix   Show recorded NAS tool compatibility across EL7-EL10 and GUI.
   help     Show this help.
+
+Compatibility matrix:
+  `container matrix` summarizes maintained shell and GUI smoke-test evidence so
+  users can choose a compatible runtime before launching a NAS-hosted tool. It
+  reads recorded results and does not run tools or consume licenses.
 
 Help:
   container help
   container run help
   container image help
   container gui help
+  container matrix help
   container run -h
   container image --help
   container gui --help
@@ -225,6 +406,7 @@ Common examples:
   container image update --os oraclelinux7,almalinux8
   container image clean --os all --force
   container gui start eda --resolution 2560x1440 --port 2
+  container matrix
 USAGE
 }
 
@@ -1602,6 +1784,10 @@ main() {
         gui)
             shift
             exec bash "$SCRIPT_DIR/gui.sh" "$@"
+            ;;
+        matrix)
+            shift
+            cmd_matrix "$@"
             ;;
         -V|--version)
             print_version

@@ -305,16 +305,17 @@ container_xauthority_from_commands() {
 test_container_cli_is_standalone() {
   local output
   output="$(bash "$REPO_ROOT/container.sh" help)"
-  assert_contains "$output" "PolyArch container v0.1.0 (https://github.com/PolyArch/container)" || return 1
+  assert_contains "$output" "PolyArch container v0.2.0 (https://github.com/PolyArch/container)" || return 1
   assert_contains "$output" "container run" || return 1
   assert_contains "$output" "container image" || return 1
   assert_contains "$output" "container gui" || return 1
+  assert_contains "$output" "container matrix" || return 1
 }
 
 test_version_variants_are_exact_and_side_effect_free() {
   setup_fake_podman
   trap cleanup_fake_podman RETURN
-  local expected="PolyArch container v0.1.0 (https://github.com/PolyArch/container)"
+  local expected="PolyArch container v0.2.0 (https://github.com/PolyArch/container)"
 
   run_container_cli --version
   assert_status "$EDA_TEST_LAST_STATUS" 0 || return 1
@@ -549,10 +550,12 @@ test_help_variants_are_detailed_and_side_effect_free() {
 
   run_container_cli help
   assert_status "$EDA_TEST_LAST_STATUS" 0 || return 1
-  assert_contains "$EDA_TEST_LAST_OUTPUT" "PolyArch container v0.1.0 (https://github.com/PolyArch/container)" || return 1
+  assert_contains "$EDA_TEST_LAST_OUTPUT" "PolyArch container v0.2.0 (https://github.com/PolyArch/container)" || return 1
   assert_contains "$EDA_TEST_LAST_OUTPUT" "Usage:" || return 1
   assert_contains "$EDA_TEST_LAST_OUTPUT" "container run" || return 1
   assert_contains "$EDA_TEST_LAST_OUTPUT" "container image" || return 1
+  assert_contains "$EDA_TEST_LAST_OUTPUT" "container matrix" || return 1
+  assert_contains "$EDA_TEST_LAST_OUTPUT" "does not run tools or consume licenses" || return 1
   [[ ! -s "$EDA_TEST_COMMANDS" ]] || { fail "top-level help should not call podman"; return 1; }
 
   run_container_cli run -h
@@ -586,6 +589,34 @@ test_help_variants_are_detailed_and_side_effect_free() {
   run_container_cli image help
   assert_status "$EDA_TEST_LAST_STATUS" 0 || return 1
   assert_contains "$EDA_TEST_LAST_OUTPUT" "container image [create|update|list|clean]" || return 1
+}
+
+test_matrix_is_compact_complete_and_side_effect_free() {
+  setup_fake_podman
+  trap cleanup_fake_podman RETURN
+
+  run_container_cli matrix
+  assert_status "$EDA_TEST_LAST_STATUS" 0 || return 1
+  assert_contains "$EDA_TEST_LAST_OUTPUT" "recorded smoke tests; not a live probe" || return 1
+  assert_contains "$EDA_TEST_LAST_OUTPUT" "Status: O=ok  P=partial  B=blocked  ?=not validated  -=not applicable" || return 1
+  assert_contains "$EDA_TEST_LAST_OUTPUT" "Synopsys" || return 1
+  assert_contains "$EDA_TEST_LAST_OUTPUT" "[syn/Y-2026.03-SP2] Design Compiler" || return 1
+  assert_contains "$EDA_TEST_LAST_OUTPUT" "Cadence" || return 1
+  assert_contains "$EDA_TEST_LAST_OUTPUT" "[CEREBRUS/261 + DDI/261] Cerebrus AI optimization" || return 1
+  assert_contains "$EDA_TEST_LAST_OUTPUT" "Open source" || return 1
+  assert_contains "$EDA_TEST_LAST_OUTPUT" "Detailed evidence:" || return 1
+  assert_not_contains "$EDA_TEST_LAST_OUTPUT" "requires GLIBC" || return 1
+  [[ ! -s "$EDA_TEST_COMMANDS" ]] || { fail "matrix should not call podman"; return 1; }
+
+  run_container_cli matrix --help
+  assert_status "$EDA_TEST_LAST_STATUS" 0 || return 1
+  assert_contains "$EDA_TEST_LAST_OUTPUT" "choose a runtime before launching a tool" || return 1
+  assert_contains "$EDA_TEST_LAST_OUTPUT" "does not probe tools or licenses live" || return 1
+
+  run_container_cli matrix help
+  assert_status "$EDA_TEST_LAST_STATUS" 0 || return 1
+  assert_contains "$EDA_TEST_LAST_OUTPUT" "container matrix" || return 1
+  [[ ! -s "$EDA_TEST_COMMANDS" ]] || { fail "matrix help should not call podman"; return 1; }
 }
 
 test_image_create_builds_hashed_image() {
@@ -929,6 +960,7 @@ run_test test_run_selects_available_container_engine
 run_test test_run_errors_when_no_container_engine_is_available
 run_test test_run_lists_os_types_and_rejects_build_only
 run_test test_help_variants_are_detailed_and_side_effect_free
+run_test test_matrix_is_compact_complete_and_side_effect_free
 run_test test_image_create_builds_hashed_image
 run_test test_image_progress_spinner_uses_braille_frames
 run_test test_image_list_reports_image_status_by_os

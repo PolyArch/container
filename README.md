@@ -5,13 +5,13 @@ image maintenance, and local GUI display containers. The current image set is
 optimized for EDA tools, but the entrypoint is intentionally generic:
 
 ```bash
-container [run|image|gui]
+container [run|image|gui|matrix]
 ```
 
 Run `./setup.sh` to expose this repository's `container.sh` as
 `~/.local/bin/container`, or run `./container.sh` directly from this checkout.
 
-The current CLI release is `v0.1.0`. Display the installed version with either
+The current CLI release is `v0.2.0`. Display the installed version with either
 form:
 
 ```bash
@@ -54,6 +54,29 @@ passed into the container. The command wrapper also unsets any
 `SNPS_CONTAINER*` variables already present inside the image before launching
 the requested command.
 
+## Check Tool Compatibility
+
+Use the maintained compatibility matrix before choosing a runtime image:
+
+```bash
+container matrix
+container matrix --help
+```
+
+`container matrix` prints the recorded shell smoke status for installed
+NAS-hosted tools across representative EL7, EL8, EL9, and EL10 images, plus GUI
+startup status through `container gui`. It is a compact view of
+`docs/container-matrix.md`; it does not launch tools, contact license servers,
+or perform live validation.
+
+| Code | Meaning |
+| --- | --- |
+| `O` | Smoke test passed. |
+| `P` | Partially supported; consult the detailed matrix. |
+| `B` | Blocked by a known runtime or external requirement. |
+| `?` | Not yet validated. |
+| `-` | Not applicable. |
+
 ## Manage Images
 
 ```bash
@@ -79,6 +102,8 @@ container image -h
 container image --help
 container gui -h
 container gui --help
+container matrix -h
+container matrix --help
 ```
 
 Image actions:
@@ -266,7 +291,8 @@ The restricted mode requires the `ip_tables`, `iptable_filter`, and
 
 | File | Description |
 | --- | --- |
-| `container.sh` | Unified `container run`, `container image`, and `container gui` dispatcher. |
+| `container.sh` | Unified `container run`, `container image`, `container gui`, and `container matrix` dispatcher. |
 | `gui.sh` | Xvnc-backed GUI container implementation. |
+| `docs/container-matrix.md` | Detailed compatibility evidence and source for the compact matrix output. |
 | `images/*.containerfile` | OS image definitions and hash source of truth. |
 | `env.example` | Example environment file. |
