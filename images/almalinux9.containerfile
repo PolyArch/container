@@ -32,7 +32,7 @@ RUN dnf -y update && \
         # Additional dependencies specific to EDA tools
         nss procps-ng elfutils-libelf-devel libssh \
         libXScrnSaver dbus dbus-devel dbus-tools \
-        libtiff openssl-devel apr-util libxcrypt-compat libnsl \
+        libtiff openssl-devel compat-openssl11 qt5-qtx11extras apr-util libxcrypt-compat libnsl \
         "xcb-util-*" xkeyboard-config libxkbcommon-x11 \
         alsa-lib libpng12 ncurses-compat-libs \
         numactl-libs pulseaudio-libs-glib2 \
