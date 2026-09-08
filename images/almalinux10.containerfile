@@ -17,7 +17,7 @@ RUN dnf -y update && \
     dnf install -y lsb-release && \
     dnf -y install \
         # Basic development and shell tools
-        ksh csh xterm tcsh tcl-devel file which gcc gcc-c++ make python3 iptables iptables-services environment-modules \
+        ksh csh xterm tcsh tcl-devel file which gcc gcc-c++ make flex python3 iptables iptables-services environment-modules \
         # X11 and GUI libraries required for EDA GUI applications
         libXtst libXext libXft libXmu libXrandr libXrender \
         libXi libXcursor libXinerama libXdmcp libXau libxcb \
