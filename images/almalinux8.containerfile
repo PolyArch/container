@@ -25,6 +25,8 @@ RUN dnf -y update && \
         # Core system libraries
         glibc glibc-devel \
         libgcc libstdc++ libatomic snappy \
+        # XRT development libraries and offline xclbin utilities (no device drivers)
+        boost-system boost-filesystem boost-program-options protobuf ocl-icd opencl-headers libuuid-devel \
         # Graphics and display libraries
         fontconfig freetype libpng libjpeg-turbo \
         mesa-libGL mesa-libGLU mesa-dri-drivers \

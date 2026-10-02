@@ -94,6 +94,9 @@ most tools but still exposes some vendor-specific compatibility gaps.
 | Intel / oneAPI Toolkit `intel/oneapi/2026.1` with oneDAL 2026.1 | blocked: compiler requires GLIBC 2.18/2.28 | ok: `icpx`+MKL, `ifx`, 2-rank MPI, and oneDAL sample | ok: `icpx`+MKL, `ifx`, 2-rank MPI, and oneDAL sample | ok: `icpx`+MKL, `ifx`, 2-rank MPI, and oneDAL sample | ok: VTune Profiler 2026.2 via EL9 runtime and `container gui`; oneDAL is a library |
 | Intel / Advisor `intel/advisor/2026.0` | ok: `advixe-cl --version` with locale warnings | ok: `advixe-cl --version` | ok: `advixe-cl --version` | ok: `advixe-cl --version` | ok: Advisor 2026.0 Welcome and Project Navigator via EL9 runtime and `container gui` |
 | AMD Xilinx / Vivado `2026.1` | ok | ok | ok | ok | ok: `vivado` via EL9 runtime and `container gui` |
+| AMD Xilinx / XRT development `2.19.194` via `amd/2025.1` | not yet validated | ok: C++ compile/link/run, Python import, offline xclbin write/read | not yet validated | not yet validated | n/a |
+| AMD Xilinx / XRT development `2.20.197` via `amd/2025.2` | not yet validated | ok: C++ compile/link/run, Python import, offline xclbin write/read | not yet validated | not yet validated | n/a |
+| AMD Xilinx / XRT development `2.23.244` via `amd/2026.1` | not yet validated | ok: C++ compile/link/run, Python import, offline xclbin write/read | not yet validated | not yet validated | n/a |
 | Achronix / ACE `10.5.2` | ok | ok | ok | ok | ok: `ace` via EL9 runtime and `container gui` |
 | Arm / Fast Models `ARM/FastModels/11.31` | blocked: EL7 system `libstdc++` lacks required GLIBCXX/CXXABI symbols | blocked: EL8 system `libstdc++` lacks `GLIBCXX_3.4.26` | ok: `simgen --version` | ok: `simgen --version` | not yet validated |
 | Arm / Fast Models `ARM/FastModels/11.26` | blocked: EL7 system `libstdc++` lacks required GLIBCXX/CXXABI symbols | ok: `model_shell64 --version`, `simgen --version` | ok: `model_shell64 --version`, `simgen --version` | ok: `model_shell64 --version`, `simgen --version` | not yet validated |
@@ -119,3 +122,34 @@ most tools but still exposes some vendor-specific compatibility gaps.
 Update this matrix after each software install, modulefile publication, or
 container dependency fix. Do not use pyrito or the NAS installation container as
 evidence for runtime dependency support.
+
+## XRT Development Validation
+
+The three XRT SDKs are Linux x86_64 EL8 builds: the AMD 2025.1 binary RPM
+and pinned official source releases for AMD 2025.2 and 2026.1. Load the
+matching `amd/<release>` module; it sets `XILINX_XRT`. The maintained
+AlmaLinux 8 image includes Boost 1.66 system/filesystem/program-options,
+protobuf, OpenCL headers/ICD loader, and UUID development headers.
+
+Validation through `container run --os almalinux8` covers:
+
+- `module show`, `display`, `load`, and `unload`;
+- `xclbinutil --version` and an offline xclbin user-metadata write/read;
+- C++17 compilation and execution using `xrt::uuid` and the
+  `xrt/experimental/xrt_version.h` version-query API, linked with
+  `-lxrt_coreutil -luuid`;
+- OpenCL host compilation/linking with `-lxilinxopencl`; platform queries
+  report `CL_DEVICE_NOT_FOUND` because no FPGA is present;
+- `python3 -c 'import pyxrt'` with the EL8 Python 3.6 ABI;
+- system Tcl, SSH configuration parsing, and unchanged Vivado/Vitis version
+  commands after adding the XRT library directory.
+
+CMake `find_package(XRT CONFIG REQUIRED)` and
+`XRT::xrt_coreutil` compile/link/run also pass in the EL8 build container.
+The 2026.1 upstream install omits `xrt/detail/version-git.h`, referenced by
+the internal `xrt/detail/version.h`; use the exported version-query API
+instead of that internal build header. Vendor files are not patched.
+
+These are development-only installations. No FPGA kernel drivers, DKMS,
+firmware, services, or board-management executables are installed. Hardware
+execution, deployment configuration, and non-EL8/Python ABIs are not validated.
