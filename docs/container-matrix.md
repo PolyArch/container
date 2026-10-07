@@ -28,6 +28,8 @@ most tools but still exposes some vendor-specific compatibility gaps.
 | --- | --- | --- | --- | --- | --- |
 | Ansys / LS-DYNA `R17.0.1 AVX2 Open MPI` | not yet validated | ok: all 8 variants, licensed 2-rank solve | ok: all 8 variants, licensed 2-rank solve | ok: all 8 variants, licensed 2-rank solve | n/a: CLI solver distributions |
 | Ansys / LS-DYNA `R17.0.1 AVX-512 Intel MPI` | not yet validated | not yet validated: AVX-512 CPU required | not yet validated: AVX-512 CPU required | not yet validated: AVX-512 CPU required | n/a: CLI solver distributions |
+| Ansys / LS-DYNA `R17.0.1 single AVX2 Intel MPI + Open MPI` | not yet validated | ok: all 16 variants, licensed 2-rank solve | ok: all 16 variants, licensed 2-rank solve | ok: all 16 variants, licensed 2-rank solve | n/a: CLI solver distributions |
+| Ansys / LS-DYNA `R17.0.1 single AVX-512 Intel MPI + Open MPI` | not yet validated | load/library resolution only: AVX-512 CPU required for solve | load/library resolution only: AVX-512 CPU required for solve | load/library resolution only: AVX-512 CPU required for solve | n/a: CLI solver distributions |
 | Synopsys / Design Compiler `syn/Y-2026.03-SP2` | blocked: requires GLIBC 2.18-2.28 | ok: `dc_shell -version` | ok: version, licensed startup/exit, and `DW01_add` elaboration with DWBB 202603.2 | ok: `dc_shell -version` | ok: Design Vision TopLevel window via EL9 runtime and `container gui` |
 | Synopsys / TestMAX `testmax/Y-2026.03-SP2` | blocked: requires GLIBC 2.18-2.28 | ok: `testmax_shell`, `dft_shell`, and legacy `tmax` version paths | ok: all version paths plus licensed `testmax_shell` and legacy `tmax` startup/exit | ok: all version paths; legacy `tmax` uses child-scoped vendor FreeType compatibility | ok: TestMAX BlockWindow and shell console via EL9 runtime and `container gui` |
 | Synopsys / TestMAX ALE `ale/Y-2026.03-SP2` | blocked: requires GLIBC 2.28 and ncurses 6 | ok: `ale_shell -version`, `ale_tran -help` | ok: `ale_shell -version`, `ale_tran -help` | ok: `ale_shell -version`, `ale_tran -help` | n/a |
@@ -171,6 +173,20 @@ licensed execution, not multi-host MPI, large-model scaling, or AVX-512.
 Standalone clients may warn that an optional `ansysli_msgs.xml` language file
 is absent; the warning did not prevent checkout or completion. Vendor trees
 were not patched. No graphical application is included in these packages.
+
+Single-precision R17.0.1 modules are named
+`R17.0.1-single-<isa>-<compiler>-<intelmpi|openmpi>-<mode>[-sharelib]`.
+All 16 AVX2 single-precision variants (AOCC/IFX, Intel MPI 2021.18 or the
+compiler-matched Open MPI 4.0.7/4.0.5, MPP/HYB, standalone/sharelib) ran the
+same licensed two-rank elastic cantilever in EL8/EL9/EL10: 48 normal
+terminations, `dyna` checkout, final time at least 0.0001 seconds, nonempty
+`d3plot`, positive total energy, and energy ratio 1.00037. Intel MPI runs used
+`I_MPI_FABRICS=shm mpiexec -bootstrap fork -n 2`; Open MPI runs used the
+double-precision command above. HYB used two threads per rank and `d3hsp`
+reported single precision (I4R4). The 16 AVX-512 single-precision variants
+passed module load and dynamic-library resolution in EL8/EL9/EL10, and the
+launcher correctly refused execution on the AVX2-only host; no AVX-512 solve
+has been run.
 
 ## XRT Development Validation
 
