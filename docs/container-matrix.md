@@ -26,6 +26,8 @@ most tools but still exposes some vendor-specific compatibility gaps.
 
 | Vendor / Tool / Version | EL7 Shell | EL8 Shell | EL9 Shell | EL10 Shell | GUI |
 | --- | --- | --- | --- | --- | --- |
+| Ansys / LS-DYNA `R17.0.1 AVX2` | not yet validated | ok: all 7 installed variants, licensed 2-rank solve | ok: all 7 installed variants, licensed 2-rank solve | ok: all 7 installed variants, licensed 2-rank solve | n/a: CLI solver distributions |
+| Ansys / LS-DYNA `R17.0.1 AVX-512` | not yet validated | not yet validated: AVX-512 CPU required | not yet validated: AVX-512 CPU required | not yet validated: AVX-512 CPU required | n/a: CLI solver distributions |
 | Synopsys / Design Compiler `syn/Y-2026.03-SP2` | blocked: requires GLIBC 2.18-2.28 | ok: `dc_shell -version` | ok: version, licensed startup/exit, and `DW01_add` elaboration with DWBB 202603.2 | ok: `dc_shell -version` | ok: Design Vision TopLevel window via EL9 runtime and `container gui` |
 | Synopsys / TestMAX `testmax/Y-2026.03-SP2` | blocked: requires GLIBC 2.18-2.28 | ok: `testmax_shell`, `dft_shell`, and legacy `tmax` version paths | ok: all version paths plus licensed `testmax_shell` and legacy `tmax` startup/exit | ok: all version paths; legacy `tmax` uses child-scoped vendor FreeType compatibility | ok: TestMAX BlockWindow and shell console via EL9 runtime and `container gui` |
 | Synopsys / TestMAX ALE `ale/Y-2026.03-SP2` | blocked: requires GLIBC 2.28 and ncurses 6 | ok: `ale_shell -version`, `ale_tran -help` | ok: `ale_shell -version`, `ale_tran -help` | ok: `ale_shell -version`, `ale_tran -help` | n/a |
@@ -123,6 +125,34 @@ most tools but still exposes some vendor-specific compatibility gaps.
 Update this matrix after each software install, modulefile publication, or
 container dependency fix. Do not use pyrito or the NAS installation container as
 evidence for runtime dependency support.
+
+## LS-DYNA Validation
+
+The AVX2 evidence covers the installed double-precision `aocc500` and
+`ifx252` MPP/HYB standalone and sharelib packages, except the unavailable
+`ifx252` HYB standalone package. Its supplied extractor is truncated; this is
+a media blocker, not a failed runtime result. All eight supplied AVX-512
+packages are installed and have modules, but no AVX-512 solve was attempted
+on the AVX2-only management host. Module inspection/load and the launcher's
+unsupported-CPU rejection were checked separately from solver execution.
+
+Each installed AVX2 module was shown, displayed, loaded, and used to run the
+same two-element elastic cantilever in maintained EL8/EL9/EL10 containers on
+the management host. The command was
+`mpiexec -bootstrap fork -n 2 ls-dyna i=elastic.k ncpu=<threads> memory=20m`,
+with `I_MPI_FABRICS=shm` and `OMP_NUM_THREADS=<threads>`; MPP used one thread
+per rank and HYB used two. The modules select Intel MPI 2021.18 and the private
+Ansys license module. The AOCC MPP builds additionally require the maintained
+images' `libomp.x86_64` package.
+
+All 21 runs checked out `dyna`, reported normal termination beyond the
+requested 0.0001-second final time, produced nonempty `d3plot` files, and had
+finite positive energies with energy balance within 1%. The smoke model uses
+fully integrated elastic solids and a 0.5 timestep scale. This validates local
+licensed execution, not multi-host MPI, large-model scaling, or AVX-512.
+Standalone clients may warn that an optional `ansysli_msgs.xml` language file
+is absent; the warning did not prevent checkout or completion. Vendor trees
+were not patched. No graphical application is included in these packages.
 
 ## XRT Development Validation
 

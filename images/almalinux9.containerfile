@@ -121,5 +121,10 @@ RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master
 RUN curl -o /home/${user}/.oh-my-zsh/custom/themes/ai-candy.zsh-theme \
     https://raw.githubusercontent.com/SihaoLiu/ai-candy/refs/heads/main/ai-candy.zsh-theme
 
+# LS-DYNA AOCC MPP executables require the LLVM OpenMP runtime.
+USER root
+RUN dnf install -y libomp.x86_64 && dnf clean all
+USER ${user}
+
 # Set the default command to start zsh shell
 CMD ["/usr/bin/zsh"] 
