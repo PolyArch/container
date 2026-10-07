@@ -28,6 +28,7 @@ most tools but still exposes some vendor-specific compatibility gaps.
 | --- | --- | --- | --- | --- | --- |
 | Ansys / LS-DYNA `R17.0.1 AVX2 Open MPI` | not yet validated | ok: all 8 variants, licensed 2-rank solve | ok: all 8 variants, licensed 2-rank solve | ok: all 8 variants, licensed 2-rank solve | n/a: CLI solver distributions |
 | Ansys / LS-DYNA `R17.0.1 AVX-512 Intel MPI` | not yet validated | not yet validated: AVX-512 CPU required | not yet validated: AVX-512 CPU required | not yet validated: AVX-512 CPU required | n/a: CLI solver distributions |
+| Ansys / LS-DYNA `R17.0.1 AVX-512 Open MPI` | not yet validated | partial: load and library resolution only; AVX-512 CPU required for solve | partial: load and library resolution only; AVX-512 CPU required for solve | partial: load and library resolution only; AVX-512 CPU required for solve | n/a: CLI solver distributions |
 | Ansys / LS-DYNA `R17.0.1 single AVX2 Intel MPI + Open MPI` | not yet validated | ok: all 16 variants, licensed 2-rank solve | ok: all 16 variants, licensed 2-rank solve | ok: all 16 variants, licensed 2-rank solve | n/a: CLI solver distributions |
 | Ansys / LS-DYNA `R17.0.1 single AVX-512 Intel MPI + Open MPI` | not yet validated | partial: load and library resolution only; AVX-512 CPU required for solve | partial: load and library resolution only; AVX-512 CPU required for solve | partial: load and library resolution only; AVX-512 CPU required for solve | n/a: CLI solver distributions |
 | Synopsys / Design Compiler `syn/Y-2026.03-SP2` | blocked: requires GLIBC 2.18-2.28 | ok: `dc_shell -version` | ok: version, licensed startup/exit, and `DW01_add` elaboration with DWBB 202603.2 | ok: `dc_shell -version` | ok: Design Vision TopLevel window via EL9 runtime and `container gui` |
@@ -187,6 +188,12 @@ reported single precision (I4R4). The 16 AVX-512 single-precision variants
 passed module load and dynamic-library resolution in EL8/EL9/EL10, and the
 launcher correctly refused execution on the AVX2-only host; no AVX-512 solve
 has been run.
+
+The eight double-precision AVX-512 Open MPI variants
+(`R17.0.1-avx512-<compiler>-openmpi-<mode>[-sharelib]`, Open MPI 4.0.5 for IFX
+and 4.0.7 for AOCC) passed module load and dynamic-library resolution in
+EL8/EL9/EL10, and the launcher refused execution on the AVX2-only host. No
+AVX-512 solve has been run.
 
 ## XRT Development Validation
 
