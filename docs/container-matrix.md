@@ -104,6 +104,7 @@ most tools but still exposes some vendor-specific compatibility gaps.
 | Arm / Fast Models `ARM/FastModels/11.26` | blocked: EL7 system `libstdc++` lacks required GLIBCXX/CXXABI symbols | ok: `model_shell64 --version`, `simgen --version` | ok: `model_shell64 --version`, `simgen --version` | ok: `model_shell64 --version`, `simgen --version` | not yet validated |
 | Open source / Open MPI `openmpi/5.0.10` | blocked: bundled libevent requires GLIBC 2.25+ | ok: 2-rank C MPI smoke | ok: 2-rank C MPI smoke | ok: 2-rank C MPI smoke | n/a |
 | Open source / Open MPI `openmpi/4.0.5` | not yet validated | ok: C and Fortran mpi_f08 compile and 2-rank allreduce | ok: C and Fortran mpi_f08 compile and 2-rank allreduce | ok: C and Fortran mpi_f08 compile and 2-rank allreduce | n/a |
+| Open source / Open MPI `openmpi/4.0.7` | not yet validated | ok: C and Fortran mpi_f08 compile and 2-rank allreduce | ok: C and Fortran mpi_f08 compile and 2-rank allreduce | ok: C and Fortran mpi_f08 compile and 2-rank allreduce | n/a |
 | Open source / Go `go/1.27.1` | not yet validated | not yet validated | ok: `go version` and Go hello-world compile/run | not yet validated | n/a |
 | Open source / Node.js `nodejs/24.20.0` | blocked: official binary requires newer GLIBC/libstdc++ ABI than EL7 | ok: Node 24.20.0, npm/npx 11.19.0, corepack, JavaScript smoke | ok: Node 24.20.0, npm/npx 11.19.0, corepack, JavaScript smoke | ok: Node 24.20.0, npm/npx 11.19.0, corepack, JavaScript smoke | n/a |
 | Benchmark / SPEC CPU2026 `SPEC/CPU2026/1.0.1` | blocked: bundled `specperl` requires newer GLIBC/libxcrypt ABI than EL7 | ok: `runcpu --version` | ok: `runcpu --version` | ok: `runcpu --version` | n/a |
@@ -129,11 +130,11 @@ evidence for runtime dependency support.
 
 ## Open MPI Compatibility Runtimes
 
-Open MPI 4.0.5 is installed alongside the newer general-purpose releases for
-LS-DYNA compatibility. It was built in the NAS EL8 administration container
+Open MPI 4.0.5 and 4.0.7 are installed alongside the newer general-purpose
+releases for LS-DYNA compatibility. Both were built in the NAS EL8 administration container
 with GCC 8.5 and Intel IFX 2026.1, using internal libevent, hwloc, and PMIx.
 All three Fortran interfaces (`mpif.h`, `use mpi`, `mpi_f08`) are enabled.
-The module loads `intel/compiler-rt/2026.1.0` for the Fortran shared libraries;
+Both modules load `intel/compiler-rt/2026.1.0` for the Fortran shared libraries;
 this is a compiler runtime dependency, not Intel MPI. Open MPI and Intel MPI
 modules are mutually exclusive.
 
