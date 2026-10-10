@@ -106,7 +106,7 @@ most tools but still exposes some vendor-specific compatibility gaps.
 | Achronix / ACE `10.5.2` | ok | ok | ok | ok | ok: `ace` via EL9 runtime and `container gui` |
 | Arm / Fast Models `ARM/FastModels/11.31` | blocked: EL7 system `libstdc++` lacks required GLIBCXX/CXXABI symbols | blocked: EL8 system `libstdc++` lacks `GLIBCXX_3.4.26` | ok: `simgen --version` | ok: `simgen --version` | not yet validated |
 | Arm / Fast Models `ARM/FastModels/11.26` | blocked: EL7 system `libstdc++` lacks required GLIBCXX/CXXABI symbols | ok: `model_shell64 --version`, `simgen --version` | ok: `model_shell64 --version`, `simgen --version` | ok: `model_shell64 --version`, `simgen --version` | not yet validated |
-| Open source / Open MPI `openmpi/5.0.10` | blocked: bundled libevent requires GLIBC 2.25+ | ok: 2-rank C MPI smoke | ok: 2-rank C MPI smoke | ok: 2-rank C MPI smoke | n/a |
+| Open source / Open MPI `openmpi/5.0.11` | blocked: bundled libevent requires GLIBC 2.25+ | ok: 2-rank C MPI smoke | ok: 2-rank C MPI smoke | ok: 2-rank C MPI smoke | n/a |
 | Open source / Open MPI `openmpi/4.0.5` | not yet validated | ok: C and Fortran mpi_f08 compile and 2-rank allreduce | ok: C and Fortran mpi_f08 compile and 2-rank allreduce | ok: C and Fortran mpi_f08 compile and 2-rank allreduce | n/a |
 | Open source / Open MPI `openmpi/4.0.7` | not yet validated | ok: C and Fortran mpi_f08 compile and 2-rank allreduce | ok: C and Fortran mpi_f08 compile and 2-rank allreduce | ok: C and Fortran mpi_f08 compile and 2-rank allreduce | n/a |
 | Open source / Go `go/1.27.1` | not yet validated | not yet validated | ok: `go version` and Go hello-world compile/run | not yet validated | n/a |
