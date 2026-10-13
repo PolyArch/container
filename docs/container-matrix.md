@@ -31,6 +31,7 @@ most tools but still exposes some vendor-specific compatibility gaps.
 | Ansys / LS-DYNA `R17.0.1 AVX-512 Open MPI` | not yet validated | partial: load and library resolution only; AVX-512 CPU required for solve | partial: load and library resolution only; AVX-512 CPU required for solve | partial: load and library resolution only; AVX-512 CPU required for solve | n/a: CLI solver distributions |
 | Ansys / LS-DYNA `R17.0.1 single AVX2 Intel MPI + Open MPI` | not yet validated | ok: all 16 variants, licensed 2-rank solve | ok: all 16 variants, licensed 2-rank solve | ok: all 16 variants, licensed 2-rank solve | n/a: CLI solver distributions |
 | Ansys / LS-DYNA `R17.0.1 single AVX-512 Intel MPI + Open MPI` | not yet validated | partial: load and library resolution only; AVX-512 CPU required for solve | partial: load and library resolution only; AVX-512 CPU required for solve | partial: load and library resolution only; AVX-512 CPU required for solve | n/a: CLI solver distributions |
+| Ansys / Fluids `ansys/fluids/2026R1` | blocked: Fluent needs GLIBC 2.27 | ok: licensed Fluent and CFX solves, Fluent Meshing, 11 launchers | ok: licensed Fluent and CFX solves, Fluent Meshing, 11 launchers | ok: licensed Fluent and CFX solves, Fluent Meshing, 11 launchers | ok: EL9 Fluent, Workbench, CFX-Pre, CFD-Post, TurboGrid, EnSight, ICEM CFD, Forte, Chemkin, FENSAP-ICE, optiSLang |
 | Synopsys / Design Compiler `syn/Y-2026.03-SP2` | blocked: requires GLIBC 2.18-2.28 | ok: `dc_shell -version` | ok: version, licensed startup/exit, and `DW01_add` elaboration with DWBB 202603.2 | ok: `dc_shell -version` | ok: Design Vision TopLevel window via EL9 runtime and `container gui` |
 | Synopsys / TestMAX `testmax/Y-2026.03-SP2` | blocked: requires GLIBC 2.18-2.28 | ok: `testmax_shell`, `dft_shell`, and legacy `tmax` version paths | ok: all version paths plus licensed `testmax_shell` and legacy `tmax` startup/exit | ok: all version paths; legacy `tmax` uses child-scoped vendor FreeType compatibility | ok: TestMAX BlockWindow and shell console via EL9 runtime and `container gui` |
 | Synopsys / TestMAX ALE `ale/Y-2026.03-SP2` | blocked: requires GLIBC 2.28 and ncurses 6 | ok: `ale_shell -version`, `ale_tran -help` | ok: `ale_shell -version`, `ale_tran -help` | ok: `ale_shell -version`, `ale_tran -help` | n/a |
@@ -198,6 +199,38 @@ The eight double-precision AVX-512 Open MPI variants
 and 4.0.7 for AOCC) passed module load and dynamic-library resolution in
 EL8/EL9/EL10, and the launcher refused execution on the AVX2-only host. No
 AVX-512 solve has been run.
+
+## Ansys Fluids Validation
+
+`ansys/fluids/2026R1` exposes curated launchers for the 2026 R1 Fluids
+release; see the parent repository's `docs/ansys-fluids.md`. Each maintained
+EL8/EL9/EL10 image ran the same shell smoke from the module:
+
+- Fluent `3ddp -g -t2`: imported the CFX `StaticMixer.def` volume mesh, set
+  2 m/s on both velocity inlets, initialized, ran 40 iterations, reported
+  inlet/outlet mass flow (net 0.0439 kg/s of 3.46 kg/s inflow), and wrote
+  case/data files;
+- Fluent Meshing `3d -meshing -g -t1`: read the vendor surface-mesh template;
+- CFX `cfx5solve -par-local -partition 2` on `StaticMixer.def`: finished
+  normally and wrote a result file;
+- help or version paths for `cfx5pre`, `cfdpost`, `cfxtg`, `polyflow`,
+  `polydata`, `polymat`, `icemcfd`, `ensight`, `forte`, `systemcoupling`, and
+  `optislang`.
+
+All 42 checks passed. Licensed runs checked out `cfd_base` and
+`cfd_solve_level*` from the module-configured endpoint. The EL9 GUI smoke
+displayed Fluent with the StaticMixer mesh rendered, Workbench, CFX-Pre,
+CFD-Post, TurboGrid, EnSight, ICEM CFD, Forte, Reaction Workbench (`chemkin`),
+FENSAP-ICE, and optiSLang through `container gui`. First-run theme and news
+dialogs appeared and are not failures. `runwb2` and other GUI-only launchers
+abort without a display. Polyflow has no standalone GUI; it is driven from
+Workbench and its shell commands.
+
+Image requirements: full `libcurl` (replacing `libcurl-minimal`), `libpsl`,
+and `libnsl2` for the vendor installer prerequisite check; `libglvnd-opengl`
+on EL8/EL9 for Fluent's `libOpenGL.so.0`; `libxkbfile` for EnSight; and
+`graphviz` for optiSLang workflow layout. EL7 loads the module, but Fluent
+requires GLIBC 2.25/2.27; vendor trees were not patched.
 
 ## XRT Development Validation
 

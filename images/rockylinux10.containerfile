@@ -15,7 +15,7 @@ RUN dnf -y update && \
     dnf install -y epel-release passwd && \
     # Install LSB (Linux Standard Base) tools for system information
     dnf install -y lsb-release && \
-    dnf -y install \
+    dnf -y install --allowerasing \
         # Basic development and shell tools
         ksh csh xterm tcsh tcl-devel file which gcc gcc-c++ make python3 iptables iptables-services environment-modules \
         # X11 and GUI libraries required for EDA GUI applications
@@ -50,6 +50,8 @@ RUN dnf -y update && \
         gd \
         # Arteris FlexNoC
         "libpng*" libicu libicu-devel \
+        # Ansys installer, Fluent, EnSight, and optiSLang prerequisites (full libcurl replaces libcurl-minimal)
+        libcurl libpsl libnsl2 libxkbfile graphviz \
         # Font packages and X11 utilities
         "xorg-x11-fonts-*" \
         # Development and debugging tools

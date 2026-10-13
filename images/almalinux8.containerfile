@@ -15,7 +15,7 @@ RUN dnf -y update && \
     dnf install -y epel-release passwd && \
     # Install LSB (Linux Standard Base) tools for system information
     dnf install -y redhat-lsb-core && \
-    dnf -y install \
+    dnf -y install --allowerasing \
         # Basic development and shell tools
         ksh csh xterm tcsh tcl-devel file which gcc gcc-c++ make python3 iptables iptables-services environment-modules \
         # X11 and GUI libraries required for EDA GUI applications
@@ -53,6 +53,8 @@ RUN dnf -y update && \
         webkit2gtk3 \
         # PDF reader
         evince \
+        # Ansys installer, Fluent, EnSight, and optiSLang prerequisites (full libcurl replaces libcurl-minimal)
+        libcurl libpsl libglvnd-opengl libxkbfile graphviz \
         # Font packages and X11 utilities
         "xorg-x11-fonts-*" xorg-x11-server-utils xorg-x11-utils \
         # Development and debugging tools
