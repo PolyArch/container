@@ -18,6 +18,8 @@ RUN dnf -y update && \
     dnf -y install --allowerasing \
         # Basic development and shell tools
         ksh csh xterm tcsh tcl-devel file which gcc gcc-c++ make flex bison help2man python3 iptables iptables-services environment-modules \
+        # Synopsys VCS launcher (bc, dc, /usr/bin/time)
+        bc time \
         # X11 and GUI libraries required for EDA GUI applications
         libXtst libXext libXft libXmu libXrandr libXrender \
         libXi libXcursor libXinerama libXdmcp libXau libxcb \
