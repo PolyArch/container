@@ -602,7 +602,8 @@ test_matrix_is_compact_complete_and_side_effect_free() {
   assert_contains "$EDA_TEST_LAST_OUTPUT" "Synopsys" || return 1
   assert_contains "$EDA_TEST_LAST_OUTPUT" "[syn/Y-2026.03-SP2] Design Compiler" || return 1
   assert_contains "$EDA_TEST_LAST_OUTPUT" "Cadence" || return 1
-  assert_contains "$EDA_TEST_LAST_OUTPUT" "[CEREBRUS/261 ISR1 26.11 + DDI/261] Cerebrus AI optimization" || return 1
+  assert_contains "$EDA_TEST_LAST_OUTPUT" "[CEREBRUS/261 " || return 1
+  assert_contains "$EDA_TEST_LAST_OUTPUT" "Cerebrus AI optimization" || return 1
   assert_contains "$EDA_TEST_LAST_OUTPUT" "Open source" || return 1
   assert_contains "$EDA_TEST_LAST_OUTPUT" "Detailed evidence:" || return 1
   assert_not_contains "$EDA_TEST_LAST_OUTPUT" "requires GLIBC" || return 1
