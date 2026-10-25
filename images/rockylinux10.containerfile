@@ -26,7 +26,9 @@ RUN dnf -y update && \
         gtk2 gtk2-devel \
         # Core system libraries
         glibc glibc-devel \
-        libgcc libstdc++ libatomic snappy \
+        libgcc libstdc++ libatomic snappy libxslt \
+        # Synopsys LynxNXT rtm_shell runtime (GStreamer)
+        gstreamer1 gstreamer1-plugins-base \
         # Graphics and display libraries
         fontconfig freetype libpng libjpeg-turbo \
         mesa-libGL mesa-libGLU mesa-dri-drivers \
