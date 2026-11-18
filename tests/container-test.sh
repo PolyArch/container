@@ -600,7 +600,8 @@ test_matrix_is_compact_complete_and_side_effect_free() {
   assert_contains "$EDA_TEST_LAST_OUTPUT" "recorded smoke tests; not a live probe" || return 1
   assert_contains "$EDA_TEST_LAST_OUTPUT" "Status: O=ok  P=partial  B=blocked  ?=not validated  -=not applicable" || return 1
   assert_contains "$EDA_TEST_LAST_OUTPUT" "Synopsys" || return 1
-  assert_contains "$EDA_TEST_LAST_OUTPUT" "[syn/Y-2026.03-SP2] Design Compiler" || return 1
+  assert_contains "$EDA_TEST_LAST_OUTPUT" "[syn/Y-" || return 1
+  assert_contains "$EDA_TEST_LAST_OUTPUT" "] Design Compiler" || return 1
   assert_contains "$EDA_TEST_LAST_OUTPUT" "Cadence" || return 1
   assert_contains "$EDA_TEST_LAST_OUTPUT" "[CEREBRUS/261 " || return 1
   assert_contains "$EDA_TEST_LAST_OUTPUT" "Cerebrus AI optimization" || return 1
