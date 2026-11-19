@@ -20,6 +20,8 @@ RUN dnf -y update && \
         ksh csh xterm tcsh tcl-devel file which gcc gcc-c++ make flex bison help2man python3 iptables iptables-services environment-modules \
         # Synopsys VCS launcher (bc, dc, /usr/bin/time)
         bc time \
+        # Cadence Protium build flows (jq; bc is listed above)
+        jq \
         # X11 and GUI libraries required for EDA GUI applications
         libXtst libXext libXft libXmu libXrandr libXrender \
         libXi libXcursor libXinerama libXdmcp libXau libxcb \
@@ -107,6 +109,9 @@ RUN mkdir -p /home/${user}/work
 
 # Create directories for license and acceptance file mounts
 RUN mkdir -p /home/${user}/.Xilinx /home/${user}/.achronix
+
+# Cadence Protium build flows expect an existing private ~/.ssh
+RUN mkdir -m 0700 /home/${user}/.ssh
 
 # Install Oh My Zsh and configure .zshrc
 RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" && \
