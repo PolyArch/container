@@ -26,6 +26,8 @@ RUN dnf -y update && \
         libXtst libXext libXft libXmu libXrandr libXrender \
         libXi libXcursor libXinerama libXdmcp libXau libxcb \
         gtk2 gtk2-devel \
+        # Cadence Sigrity 26.1 GUI launchers (libgtk-3.so.0)
+        gtk3 \
         # Core system libraries
         glibc glibc-devel \
         libgcc libstdc++ libatomic snappy libxslt \
