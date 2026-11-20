@@ -112,11 +112,13 @@ most tools but still exposes some vendor-specific compatibility gaps.
 | Cadence / Verisium Manager AGL `VERISIUMMGRAGL/2609` Update 26.10.010 | ok: 26.10-a010 | ok: 26.10-a010 | ok: 26.10-a010 | ok: 26.10-a010 | blocked: `vmanager` requires a server profile name or URL before GUI launch |
 | Intel Altera / Quartus Prime Pro `26.1` | ok | ok | ok | ok | ok: `quartus` via EL9 runtime and `container gui` |
 | Intel / oneAPI Toolkit `intel/oneapi/2026.1` with oneDAL 2026.1 | blocked: compiler requires GLIBC 2.18/2.28 | ok: `icpx`+MKL, `ifx`, 2-rank MPI, and oneDAL sample | ok: `icpx`+MKL, `ifx`, 2-rank MPI, and oneDAL sample | ok: `icpx`+MKL, `ifx`, 2-rank MPI, and oneDAL sample | ok: VTune Profiler 2026.2 via EL9 runtime and `container gui`; oneDAL is a library |
+| Intel / oneAPI Toolkit `intel/oneapi/2026.2` (oneDAL 2026.2 pending checksum) | blocked: compiler requires GLIBC 2.18/2.28 | ok: `icpx`+MKL, `ifx`, 2-rank MPI with libfabric 2.6.13 | ok: `icpx`+MKL, `ifx`, 2-rank MPI with libfabric 2.6.13 | ok: `icpx`+MKL, `ifx`, 2-rank MPI with libfabric 2.6.13 | ok: VTune Profiler 2026.6 Welcome window via EL9 runtime and `container gui` |
 | Intel / Advisor `intel/advisor/2026.0` | ok: `advixe-cl --version` with locale warnings | ok: `advixe-cl --version` | ok: `advixe-cl --version` | ok: `advixe-cl --version` | ok: Advisor 2026.0 Welcome and Project Navigator via EL9 runtime and `container gui` |
 | AMD Xilinx / Vivado `2026.1` | ok | ok | ok | ok | ok: `vivado` via EL9 runtime and `container gui` |
 | AMD Xilinx / Vivado `2026.2` | blocked: Vivado/Vitis require GLIBC 2.18/2.25/2.27 | ok: Vivado batch and `-version`, Vitis, `v++`, `xsdb` | ok: Vivado batch and `-version`, Vitis, `v++`, `xsdb` | ok: Vivado batch and `-version`, Vitis, `v++`, `xsdb` | ok: `vivado` main window via EL9 runtime and `container gui` |
 | AMD Xilinx / XRT development `2.20.197` via `amd/2025.2` | not yet validated | ok: C++ compile/link/run, Python import, offline xclbin write/read | not yet validated | not yet validated | n/a |
 | AMD Xilinx / XRT development `2.23.244` via `amd/2026.1` | not yet validated | ok: C++ compile/link/run, Python import, offline xclbin write/read | not yet validated | not yet validated | n/a |
+| AMD Xilinx / XRT development `2.26.149` via `amd/2026.2` | blocked: system GCC lacks C++17; GLIBCXX 3.4.20 | ok: C++ compile/link/run, CMake discovery, Python import, offline xclbin write/read | blocked: EL8 build ABI (Python 3.6 `pyxrt`, Boost 1.66, OpenSSL 1.1); no `uuid/uuid.h` | blocked: EL8 build ABI (Python 3.6 `pyxrt`, OpenSSL 1.1); no `uuid/uuid.h` | n/a |
 | Achronix / ACE `10.5.2` | ok | ok | ok | ok | ok: `ace` via EL9 runtime and `container gui` |
 | Arm / Fast Models `ARM/FastModels/11.31` | blocked: EL7 system `libstdc++` lacks required GLIBCXX/CXXABI symbols | blocked: EL8 system `libstdc++` lacks `GLIBCXX_3.4.26` | ok: `simgen --version` | ok: `simgen --version` | not yet validated |
 | Arm / Fast Models `ARM/FastModels/11.26` | blocked: EL7 system `libstdc++` lacks required GLIBCXX/CXXABI symbols | ok: `model_shell64 --version`, `simgen --version` | ok: `model_shell64 --version`, `simgen --version` | ok: `model_shell64 --version`, `simgen --version` | not yet validated |
@@ -134,6 +136,7 @@ most tools but still exposes some vendor-specific compatibility gaps.
 | Open source / Bazel `google/bazel/9.3.2` | blocked: GLIBC/libstdc++ ABI newer than EL7 | ok: minimal `genrule` build | ok: minimal `genrule` build | ok: minimal `genrule` build | n/a |
 | Open source / Verilator `verilator/5.054` | blocked: EL8-built binary requires newer `libstdc++` ABI than EL7 | ok: Verilator 5.054 `-Wall` lint and two-module `--binary --no-timing` build/run | ok: Verilator 5.054 `-Wall` lint and two-module `--binary --no-timing` build/run | ok: Verilator 5.054 `-Wall` lint and two-module `--binary --no-timing` build/run | n/a |
 | Open source / Yosys `yosys/0.71` | blocked: EL8-built binary requires GLIBC 2.26/2.27 and newer libstdc++ ABI than EL7 | ok: Verilog synthesis with ABC and JSON output | ok: Verilog synthesis with ABC and JSON output | ok: Verilog synthesis with ABC and JSON output | n/a |
+| Open source / SystemC `systemc/3.0.3` | blocked: system GCC 4.8 lacks C++17 | ok: C++17 `sc_main` build/run, `sc_version` 3.0.3-Accellera | ok: C++17 `sc_main` build/run, `sc_version` 3.0.3-Accellera | ok: C++17 `sc_main` build/run, `sc_version` 3.0.3-Accellera | n/a |
 | Open source / OpenROAD `openroad/2026.11.18-8c9084f85c0e` | blocked: EL8-built binary requires GLIBC 2.23/2.28 | ok: version 26Q4-2325-g8c9084f85c and Tcl execution smoke | ok: version and Tcl execution smoke | ok: version and Tcl execution smoke | ok: OpenROAD 8c9084f8 main window via EL9 runtime and `container gui` |
 | Open source / LLVM `llvm/22.1.8` | blocked: official binary requires newer GLIBC/libstdc++ ABI than EL7 | blocked: official binary requires GLIBC 2.34 / newer libstdc++ | blocked: official binary requires `GLIBCXX_3.4.30` | ok: `clang` compiles/runs a C smoke | n/a |
 | Open source / LLVM `llvm/23.1.6` | blocked: official binary requires GLIBC 2.27/2.34 | blocked: official binary requires GLIBC 2.29/2.34 | blocked: official binary requires `GLIBCXX_3.4.30` | ok: `clang`/`clang++` 23.1.6 compile/run C and C++ smokes | n/a |
@@ -248,8 +251,9 @@ requires GLIBC 2.25/2.27; vendor trees were not patched.
 
 ## XRT Development Validation
 
-The three XRT SDKs are Linux x86_64 EL8 builds: the AMD 2025.1 binary RPM
-and pinned official source releases for AMD 2025.2 and 2026.1. Load the
+The four XRT SDKs are Linux x86_64 EL8 builds: the AMD 2025.1 binary RPM
+and pinned official source releases for AMD 2025.2, 2026.1, and 2026.2
+(`202620.2.26.149`, the 2026.2 DC release tag). Load the
 matching `amd/<release>` module; it sets `XILINX_XRT`. The maintained
 AlmaLinux 8 image includes Boost 1.66 system/filesystem/program-options,
 protobuf, OpenCL headers/ICD loader, and UUID development headers.
@@ -276,3 +280,6 @@ instead of that internal build header. Vendor files are not patched.
 These are development-only installations. No FPGA kernel drivers, DKMS,
 firmware, services, or board-management executables are installed. Hardware
 execution, deployment configuration, and non-EL8/Python ABIs are not validated.
+For 2026.2 on EL9/EL10, `xclbinutil` needs OpenSSL 1.1 `libcrypto.so.1.1`
+(and Boost 1.66 on EL9), `pyxrt` is built for Python 3.6, and the images
+lack `uuid/uuid.h`; use the EL8 runtime for XRT development.
