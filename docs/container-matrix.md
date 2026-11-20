@@ -83,7 +83,7 @@ most tools but still exposes some vendor-specific compatibility gaps.
 | Cadence / Virtuoso IC `IC/261` Base 26.10.000 | blocked: no EL7 `libmvec.so.1` ABI | ok: `virtuoso -W` reports IC26.1-64b.42, OA 22.63.002 | ok: `virtuoso -W` reports IC26.1-64b.42, OA 22.63.002 | ok: `virtuoso -W` reports IC26.1-64b.42, OA 22.63.002 | ok: Virtuoso AI Studio IC26.1 CIW and Dashboard via EL9 runtime and `container gui` |
 | Cadence / Xcelium `XCELIUM/2603` | blocked: GLIBC > EL7 | ok: `xrun` 26.03-s007 licensed SV compile/run | ok: `xrun` 26.03-s007 licensed SV compile/run | ok: `xrun` 26.03-s007 licensed SV compile/run | ok: `simvision` 26.03-s007 Waveform via EL9 runtime and `container gui` |
 | Cadence / Xcelium `XCELIUM/2609` Hotfix 26.09.002 | blocked: `xrun` needs GLIBC 2.25/2.27/2.28 | ok: `xrun` 26.09-s002 licensed SV compile/run | ok: `xrun` 26.09-s002 licensed SV compile/run | ok: `xrun` 26.09-s002 licensed SV compile/run | ok: `simvision` 26.09 Waveform via EL9 runtime and `container gui` |
-| Cadence / Protium X3 PTM `PTM/2602` | blocked: Oracle/CentOS require newer GLIBC and library ABIs | ok: vendor `xeWrapper` launchers after `ptm_postdist`; Alma/Rocky `xeCompile`/`ptmRun` 26.02.630 with `proclim.sh` stack/data unlimited and DBIN/DBOUT set (Rocky 8 vendor-listed; Alma uses `NO_PLATFORM_REL_CHECK`); `ProtiumX3_Implementation_Debug` checkout | ok: same vendor-launcher checks on Alma/Rocky 9 (`NO_PLATFORM_REL_CHECK`) and license checkout | ok: same vendor-launcher checks on Alma/Rocky 10 (`NO_PLATFORM_REL_CHECK`) and license checkout | not yet validated: hardware/debug GUI needs a real Protium X3 target |
+| Cadence / Protium X3 PTM `PTM/2602` | blocked: Oracle/CentOS require newer GLIBC and library ABIs | ok: vendor `xeWrapper` launchers after `ptm_postdist`; Alma/Rocky `xeCompile`/`ptmRun` 26.02.630 with `proclim.sh` stack/data unlimited and DBIN/DBOUT set (Rocky 8 vendor-listed; Alma uses `NO_PLATFORM_REL_CHECK`); `ProtiumX3_Implementation_Debug` checkout; `sqlite3` present for SA/IXCOM `smnet.db` import; `ProtiumProfiler.sh -h` via the site launcher (PTM `libffi.so.7` child-scoped) | ok: same vendor-launcher checks on Alma/Rocky 9 (`NO_PLATFORM_REL_CHECK`) and license checkout; `sqlite3` present for SA/IXCOM `smnet.db` import; `ProtiumProfiler.sh -h` via the site launcher (PTM `libffi.so.7` child-scoped) | ok: same vendor-launcher checks on Alma/Rocky 10 (`NO_PLATFORM_REL_CHECK`) and license checkout; `sqlite3` present for SA/IXCOM `smnet.db` import; `ProtiumProfiler.sh -h` via the site launcher (PTM `libffi.so.7` child-scoped) | not yet validated: hardware/debug GUI needs a real Protium X3 target |
 | Cadence / IXCOM and HDLICE `IXCOM/2607` | blocked: IXCOM requires newer GLIBC and HDLICE requires `libtirpc.so.3` | ok: Alma/Rocky `ixcom`, `hdlice`, `hdlice_nse` 26.07.607 via vendor `xeWrapper` after `ixcom_postdist` | ok: Alma/Rocky `ixcom`, `hdlice`, `hdlice_nse` 26.07.607 via vendor `xeWrapper` | ok: Alma/Rocky `ixcom`, `hdlice`, `hdlice_nse` 26.07.607 via vendor `xeWrapper` | n/a: command-line integration tools |
 | Cadence / SPB Allegro and OrCAD `SPB/251` Hotfix 25.10.060 | not yet validated | ok: `allegro_batch`/`allegro_uprev -version` report 25.1-S060 | ok: `allegro_batch`/`allegro_uprev -version` report 25.1-S060 | blocked: EL10 lacks `libtiff.so.5` ABI | ok: Allegro 25.1 Product Choices dialog via EL9 runtime and `container gui` |
 | Cadence / SPB Allegro and OrCAD `SPB/261` Base 26.10.000 | blocked: `allegro_batch` needs `libtirpc.so.3` (EL7 ships `.so.1`) | ok: `allegro_batch`/`allegro_uprev -version` report 26.1-P001 | ok: `allegro_batch`/`allegro_uprev -version` report 26.1-P001 | ok: `allegro_batch`/`allegro_uprev -version` report 26.1-P001 | ok: Allegro X Designer 26.1-2026-P001 PCB editor via EL9 runtime and `container gui`, licensed checkout/return seen in OML |
@@ -283,3 +283,17 @@ execution, deployment configuration, and non-EL8/Python ABIs are not validated.
 For 2026.2 on EL9/EL10, `xclbinutil` needs OpenSSL 1.1 `libcrypto.so.1.1`
 (and Boost 1.66 on EL9), `pyxrt` is built for Python 3.6, and the images
 lack `uuid/uuid.h`; use the EL8 runtime for XRT development.
+
+## Protium X3 Notes
+
+- IXCOM 26.07's own support matrix (`doc/wxeinstallZ3/Supported_GCC_Compiler_and_Use_Model.html`)
+  lists PTM 26.02.000 and later, Xcelium 26.03.001 and later, and Xcelium
+  25.09.009 and later as supported with IXCOM 26.07.000, which supports only
+  GCC 12.4 (Xcelium 26.03 bundles `cdsgcc` 12.4). The PTM 26.02 KPNS
+  documents IXCOM 25.08 only with the `-disableObjModule` objmod workaround.
+- The SA/IXCOM flow imports `dbFiles/smnet.db` with `sqlite3`; the EL8/9/10
+  runtime images install `sqlite` for it.
+- `ProtiumProfiler.sh` on PATH is a site launcher in the modulefiles helpers.
+  It adds PTM's `tools.lnx86/lib/64bit` (bundled `libffi.so.7`; EL8 ships only
+  `libffi.so.6`) for the Profiler child only. The bundled Python 3.6.1 lacks
+  `lzma`, so pandas prints a harmless warning.

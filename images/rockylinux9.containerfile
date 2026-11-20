@@ -20,8 +20,8 @@ RUN dnf -y update && \
         ksh csh xterm tcsh tcl-devel file which gcc gcc-c++ make python3 iptables iptables-services environment-modules \
         # Synopsys VCS launcher (bc, dc, /usr/bin/time)
         bc time \
-        # Cadence Protium build flows (jq; bc is listed above)
-        jq \
+        # Cadence Protium build flows (jq, sqlite3 for SA/IXCOM smnet.db; bc is listed above)
+        jq sqlite \
         # X11 and GUI libraries required for EDA GUI applications
         libXp libXtst libXext libXft libXmu libXrandr libXrender \
         libXi libXcursor libXinerama libXdmcp libXau libxcb \
