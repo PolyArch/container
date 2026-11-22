@@ -147,6 +147,7 @@ most tools but still exposes some vendor-specific compatibility gaps.
 | MathWorks / MATLAB `R2026a` Update 4 | partial: `matlab -h` works; licensed runtime still requires newer GLIBC | partial: `matlab -h` works; no shared MATLAB license proof for container users | partial: `matlab -h` works; no shared MATLAB license proof for container users | partial: `matlab -h` works; no shared MATLAB license proof for container users | blocked: MATLAB desktop requires site-approved shared license or network license configuration |
 | Open source / TeX Live 2026 package set `texlive/2026` | partial: `pdflatex` generates a PDF with locale warnings; bundled Biber 2.22 is blocked by its embedded Perl/PAR runtime | ok: `pdflatex` and Biber 2.22 generate a bibliography PDF | ok: `pdflatex` and Biber 2.22 generate a bibliography PDF | ok: `pdflatex` and Biber 2.22 generate a bibliography PDF | n/a |
 | Accellera / UVM `uvm/2020.3.1` | ok: source library paths visible with locale warnings | ok: source library paths visible | ok: source library paths visible | ok: source library paths visible | n/a |
+| Accellera / UVM `uvm/2020.3.2` | not yet validated | ok: Xcelium 26.09 `xrun -uvmhome -uvmnocdnsextra` hello test prints Accellera:1800.2:UVM:2020.3.2, 0 UVM errors | ok: same Xcelium 26.09 UVM hello test | ok: same Xcelium 26.09 UVM hello test | n/a |
 
 Update this matrix after each software install, modulefile publication, or
 container dependency fix. Do not use pyrito or the NAS installation container as
