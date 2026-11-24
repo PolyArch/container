@@ -17,7 +17,7 @@ RUN dnf -y update && \
     dnf install -y lsb-release && \
     dnf -y install --allowerasing \
         # Basic development and shell tools
-        ksh csh xterm tcsh tcl-devel file which gcc gcc-c++ make flex bison help2man python3 iptables iptables-services environment-modules \
+        ksh csh xterm tcsh tcl-devel file which gcc gcc-c++ make flex bison help2man python3 python-unversioned-command iptables iptables-services environment-modules \
         # Synopsys VCS launcher (bc, dc, /usr/bin/time)
         bc time \
         # Cadence Protium build flows (jq, sqlite3 for SA/IXCOM smnet.db; bc is listed above)

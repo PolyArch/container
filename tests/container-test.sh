@@ -795,6 +795,18 @@ test_containerfiles_support_module_initialization() {
   done < <("$REPO_ROOT/container.sh" run --os list)
 }
 
+test_el8_plus_containerfiles_provide_unversioned_python() {
+  local os_type containerfile
+  for os_type in almalinux8 rockylinux8; do
+    containerfile="$REPO_ROOT/images/$os_type.containerfile"
+    assert_file_contains "$containerfile" "alternatives --set python /usr/bin/python3" || return 1
+  done
+  for os_type in almalinux9 rockylinux9 almalinux10 rockylinux10; do
+    containerfile="$REPO_ROOT/images/$os_type.containerfile"
+    assert_file_contains "$containerfile" "python-unversioned-command" || return 1
+  done
+}
+
 test_image_requires_os_except_list() {
   setup_fake_podman
   trap cleanup_fake_podman RETURN
@@ -968,6 +980,7 @@ run_test test_image_progress_spinner_uses_braille_frames
 run_test test_image_list_reports_image_status_by_os
 run_test test_image_list_and_create_cover_engine_matrix
 run_test test_containerfiles_support_module_initialization
+run_test test_el8_plus_containerfiles_provide_unversioned_python
 run_test test_image_requires_os_except_list
 run_test test_image_clean_skips_used_images_without_force
 run_test test_image_clean_force_requires_confirmation_for_used_images

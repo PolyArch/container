@@ -64,6 +64,10 @@ RUN dnf -y update && \
         # Locale support for English UTF-8
         glibc-langpack-en telnet radare2
 
+# Unversioned python for vendor scripts with #!/usr/bin/env python (e.g. Cadence
+# PTM genWave); EL8 ships no default, Red Hat documents alternatives for this
+RUN alternatives --set python /usr/bin/python3
+
 # Generate and set up D-Bus machine ID
 # This is required for D-Bus to function properly in the container
 RUN rm -f /etc/machine-id /var/lib/dbus/machine-id \
