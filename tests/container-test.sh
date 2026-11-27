@@ -800,7 +800,7 @@ test_el8_plus_containerfiles_provide_unversioned_python() {
   for os_type in almalinux8 rockylinux8; do
     containerfile="$REPO_ROOT/images/$os_type.containerfile"
     assert_file_contains "$containerfile" "alternatives --set python /usr/bin/python3" || return 1
-    assert_file_contains "$containerfile" "alternatives --set python3 /usr/bin/python3.12" || return 1
+    assert_file_contains "$containerfile" "alternatives --set python3 /usr/bin/python3.6" || return 1
   done
   for os_type in almalinux9 rockylinux9 almalinux10 rockylinux10; do
     containerfile="$REPO_ROOT/images/$os_type.containerfile"
