@@ -806,6 +806,7 @@ test_el8_plus_containerfiles_provide_unversioned_python() {
     containerfile="$REPO_ROOT/images/$os_type.containerfile"
     assert_file_contains "$containerfile" "python-unversioned-command" || return 1
     assert_file_contains "$containerfile" "python3.14 python3.14-pip" || return 1
+    assert_file_contains "$containerfile" "dnf -y install python3-pip" || return 1
   done
   for os_type in almalinux8 rockylinux8 almalinux9 rockylinux9; do
     assert_file_contains "$REPO_ROOT/images/$os_type.containerfile" "python3.12 python3.12-pip" || return 1

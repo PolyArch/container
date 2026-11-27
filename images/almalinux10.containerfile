@@ -70,8 +70,8 @@ RUN dnf -y update && \
         vim zsh git telnet radare2
 
 # Newer Python for user tools: the default python3 (3.12) stays, because dnf runs
-# on it; EPEL adds 3.13 and AppStream adds 3.14 with pip, as python3.X
-RUN dnf -y install python3.13 python3.13-pip python3.14 python3.14-pip \
+# on it, with its pip; EPEL adds 3.13 and AppStream 3.14 with pip, as python3.X
+RUN dnf -y install python3-pip python3.13 python3.13-pip python3.14 python3.14-pip \
     && dnf clean all
 
 # Generate and set up D-Bus machine ID

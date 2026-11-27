@@ -71,8 +71,8 @@ RUN dnf -y update && \
         vim zsh git telnet radare2
 
 # Newer Python for user tools: the default python3 (3.9) stays, because dnf runs
-# on it; AppStream adds 3.11, 3.12 and 3.14 with pip as python3.X
-RUN dnf -y install python3.11 python3.11-pip python3.12 python3.12-pip python3.14 python3.14-pip \
+# on it, with its pip; AppStream adds 3.11, 3.12 and 3.14 with pip as python3.X
+RUN dnf -y install python3-pip python3.11 python3.11-pip python3.12 python3.12-pip python3.14 python3.14-pip \
     && dnf clean all
 
 # Generate and set up D-Bus machine ID
