@@ -64,9 +64,14 @@ RUN dnf -y update && \
         # Locale support for English UTF-8
         glibc-langpack-en telnet radare2
 
-# Unversioned python for vendor scripts with #!/usr/bin/env python (e.g. Cadence
-# PTM genWave); EL8 ships no default, Red Hat documents alternatives for this
-RUN alternatives --set python /usr/bin/python3
+# Newer Python for user tools: AppStream 3.9, 3.11 and 3.12 with pip. python3 and
+# the unversioned python (vendor scripts with #!/usr/bin/env python, e.g. Cadence
+# PTM genWave) select 3.12 through Red Hat's documented alternatives; dnf keeps
+# using /usr/libexec/platform-python (3.6), which stays installed as python3.6
+RUN dnf -y install python39 python39-pip python3.11 python3.11-pip python3.12 python3.12-pip \
+    && alternatives --set python3 /usr/bin/python3.12 \
+    && alternatives --set python /usr/bin/python3 \
+    && dnf clean all
 
 # Generate and set up D-Bus machine ID
 # This is required for D-Bus to function properly in the container
