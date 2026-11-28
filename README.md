@@ -41,6 +41,7 @@ Run options:
 | `--engine docker|podman` | Select the container engine when both are installed. Defaults to Podman when available. |
 | `--network yes` | Use host networking. This is the default. |
 | `--network no` | Use the restricted `container-restricted` network. |
+| `--shm-size <size>` | Size limit of `/dev/shm` inside the container. Defaults to `64g`, which EDA tools that keep databases or simulation state in shared memory need; the engine default of 64 MB is too small. The limit is not reserved memory. |
 | `--` | Separate `container run` options from the command to run in the container. |
 
 If `--workdir` is omitted, `container run` creates a `container-work_*`

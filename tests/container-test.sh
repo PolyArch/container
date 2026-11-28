@@ -346,6 +346,7 @@ test_run_defaults_to_inherit_env_and_host_network() {
   assert_contains "$log" "podman[run]" || return 1
   assert_not_contains "$log" "[-it]" || return 1
   assert_contains "$log" "[--network=host]" || return 1
+  assert_contains "$log" "[--shm-size=64g]" || return 1
   assert_contains "$log" "[-v][$workdir:/home/edauser/work:rw]" || return 1
   assert_not_contains "$log" "[-v][$workdir:/home/edauser:rw]" || return 1
   [[ ! -e "$EDA_TEST_HOME/.achronix/.accept" ]] || {
@@ -367,6 +368,27 @@ test_run_defaults_to_inherit_env_and_host_network() {
   assert_not_contains "$log" "[-e][SNPS_CONTAINER_TEST=drop]" || return 1
   assert_contains "$log" "[$(image_name almalinux8)]" || return 1
   assert_not_contains "$log" "[--build-only]" || return 1
+}
+
+test_run_shm_size_option_overrides_default_and_rejects_bad_sizes() {
+  setup_fake_podman
+  trap cleanup_fake_podman RETURN
+  local workdir="$EDA_TEST_TMP/work"
+  mkdir -p "$workdir"
+  printf '%s\n' "$(image_name almalinux8)" >"$EDA_TEST_IMAGES"
+
+  run_container_cli run --os almalinux8 --workdir "$workdir" --shm-size 128g -- echo hello
+
+  assert_status "$EDA_TEST_LAST_STATUS" 0 || return 1
+  assert_contains "$(commands)" "[--shm-size=128g]" || return 1
+  assert_not_contains "$(commands)" "[--shm-size=64g]" || return 1
+
+  : >"$EDA_TEST_COMMANDS"
+  run_container_cli run --os almalinux8 --workdir "$workdir" --shm-size lots -- echo hello
+
+  [[ "$EDA_TEST_LAST_STATUS" -ne 0 ]] || { fail "bad --shm-size should fail"; return 1; }
+  assert_contains "$EDA_TEST_LAST_OUTPUT" "--shm-size must be a number" || return 1
+  assert_not_contains "$(commands)" "podman[run]" || return 1
 }
 
 test_run_requires_os() {
@@ -970,6 +992,7 @@ run_test() {
 run_test test_container_cli_is_standalone
 run_test test_version_variants_are_exact_and_side_effect_free
 run_test test_run_defaults_to_inherit_env_and_host_network
+run_test test_run_shm_size_option_overrides_default_and_rejects_bad_sizes
 run_test test_run_requires_os
 run_test test_run_mounts_existing_achronix_accept_file_with_license_marker
 run_test test_run_skips_existing_achronix_file_without_license_marker

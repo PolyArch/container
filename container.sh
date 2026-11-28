@@ -429,6 +429,8 @@ USAGE
     cat <<'USAGE'
   --network yes|no         yes uses host network. no uses restricted network.
                            Default: yes.
+  --shm-size SIZE          Size limit of /dev/shm inside the container, such as 64g.
+                           Default: 64g. The limit is not reserved memory.
   --                       Separate container options from the container command.
 
 Behavior:
@@ -811,6 +813,7 @@ add_common_podman_args() {
             PODMAN_ARGS+=(
                 "run" "--rm" "--uts=host"
                 "--name" "$CONTAINER_NAME"
+                "--shm-size=$CONTAINER_SHM_SIZE"
                 "--userns=keep-id"
                 "--systemd=false"
                 "--cgroups=disabled"
@@ -822,6 +825,7 @@ add_common_podman_args() {
             PODMAN_ARGS+=(
                 "run" "--rm" "--uts=host"
                 "--name" "$CONTAINER_NAME"
+                "--shm-size=$CONTAINER_SHM_SIZE"
                 "--security-opt" "label=disable"
             )
             ;;
@@ -975,7 +979,7 @@ add_environment_args() {
 
 cmd_run() {
     local env_mode="inherit" env_file="" os_type="" network="yes" requested_work_dir=""
-    local requested_engine="" engine
+    local requested_engine="" engine shm_size="64g"
     local caller_pwd="${CALLER_PWD:-$PWD}" gui_enabled=true tool_name timestamp random_hash image
     local container_user="${USER:-$(whoami)}"
     local achronix_file
@@ -1023,6 +1027,13 @@ cmd_run() {
                         die "--network must be yes or no"
                         ;;
                 esac
+                shift 2
+                ;;
+            --shm-size)
+                [[ $# -ge 2 ]] || die "--shm-size needs a size such as 64g"
+                [[ "$2" =~ ^[1-9][0-9]*[bkmgBKMG]?$ ]] \
+                    || die "--shm-size must be a number with an optional b, k, m, or g unit"
+                shm_size="$2"
                 shift 2
                 ;;
             --build-only)
@@ -1078,6 +1089,7 @@ cmd_run() {
     CONTAINER_TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
     CONTAINER_HASH="$(head -c 6 /dev/urandom | base64 | tr -dc 'a-zA-Z0-9' | head -c 6)"
     CONTAINER_NAME="container-${engine}-${os_type}-${CONTAINER_TIMESTAMP}-${CONTAINER_HASH}"
+    CONTAINER_SHM_SIZE="$shm_size"
     PODMAN_ARGS=()
     add_common_podman_args "$engine"
 
